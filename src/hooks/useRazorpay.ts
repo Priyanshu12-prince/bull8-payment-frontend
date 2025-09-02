@@ -20,7 +20,7 @@ export const useRazorpay = () => {
     });
   }, []);
 
-  const createOrder = useCallback(async (amount: number): Promise<string> => {
+  const createOrder = useCallback(async (formData: PaymentFormData): Promise<string> => {
     // In a real application, this would call your backend API
     // For demo purposes, we'll simulate an order creation
     const response = await fetch('http://localhost:3000/create-order', {
@@ -28,7 +28,13 @@ export const useRazorpay = () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ amount: amount * 100 }), // Convert to paise
+      body: JSON.stringify({
+        amount: formData.amount * 100, // Convert to paise
+        name: formData.name,
+        email: formData.email,
+        contact: formData.contact,
+        description: formData.description,
+      }),
     });
 
     if (!response.ok) {
@@ -36,8 +42,9 @@ export const useRazorpay = () => {
     }
 
     const data = await response.json();
-    console.log(data,'77777s')
-    return data.id;
+    
+
+    return data.orderId;
   }, []);
 
   const initiatePayment = useCallback(async (
@@ -56,7 +63,7 @@ export const useRazorpay = () => {
       }
 
       // Create order via backend and use returned order id
-      const orderId = await createOrder(formData.amount);
+      const orderId = await createOrder(formData);
 
       const options: RazorpayOptions = {
         key: 'rzp_test_RCdg9ReFdakOIV', // Replace with your Razorpay key

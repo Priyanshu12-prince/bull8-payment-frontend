@@ -14,6 +14,7 @@ function App() {
   const { initiatePayment, isLoading, error } = useRazorpay();
 
   const handlePaymentSubmit = async (formData: PaymentFormData) => {
+    console.log(formData,'090909')
     await initiatePayment(
       formData,
       (response: RazorpayResponse) => {

@@ -9,7 +9,7 @@ interface PaymentFormProps {
 
 export const PaymentForm: React.FC<PaymentFormProps> = ({ onSubmit, isLoading }) => {
   const [formData, setFormData] = useState<PaymentFormData>({
-    amount: 100,
+    amount: 1,
     name: '',
     email: '',
     contact: '',

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { CreditCard, Shield, Zap, CheckCircle } from 'lucide-react';
-import { PaymentForm } from './components/PaymentForm';
+import { CreditCard, Briefcase, TrendingUp, Rocket, Crown } from 'lucide-react';
 import { PaymentSuccess } from './components/PaymentSuccess';
 import { PaymentError } from './components/PaymentError';
 import { useRazorpay } from './hooks/useRazorpay';
@@ -12,20 +11,45 @@ function App() {
   const [paymentState, setPaymentState] = useState<PaymentState>('form');
   const [paymentData, setPaymentData] = useState<RazorpayResponse | null>(null);
   const { initiatePayment, isLoading, error } = useRazorpay();
+  const [activePlanId, setActivePlanId] = useState<string | null>(null);
 
-  const handlePaymentSubmit = async (formData: PaymentFormData) => {
-    console.log(formData,'090909')
-    await initiatePayment(
-      formData,
-      (response: RazorpayResponse) => {
-        setPaymentData(response);
-        setPaymentState('success');
-      },
-      (errorMessage: string) => {
-        console.error('Payment failed:', errorMessage);
-        setPaymentState('error');
-      }
-    );
+  const plans = [
+    { id: 'starter', title: 'Starter', cap: 'Up to ₹13 Lakh', amount: 3500, description: 'Starter monthly plan', icon: <Briefcase className="w-10 h-10" />, color: 'bg-teal-500' },
+    { id: 'growth', title: 'Growth', cap: 'Up to ₹25 Lakh', amount: 5000, description: 'Growth monthly plan', icon: <TrendingUp className="w-10 h-10" />, color: 'bg-green-500' },
+    { id: 'pro', title: 'Pro', cap: 'Up to ₹50 Lakh', amount: 8000, description: 'Pro monthly plan', icon: <Rocket className="w-10 h-10" />, color: 'bg-orange-500' },
+    { id: 'elite', title: 'Elite', cap: 'Up to ₹1 Crore', amount: 10000, description: 'Elite monthly plan', icon: <Crown className="w-10 h-10" />, color: 'bg-yellow-500' },
+  ];
+
+  const handlePlanPay = async (plan: { id: string; amount: number; description: string }) => {
+    setActivePlanId(plan.id);
+    const formData: PaymentFormData = {
+      amount: plan.amount,
+      name: '',
+      email: '',
+      contact: '',
+      description: plan.description,
+    };
+
+    const planCode = plan.id || 'custom';
+    const keyId = 'rzp_test_RDoRzN5gpmXr2V';
+
+    try {
+      await initiatePayment(
+        formData,
+        planCode,
+        keyId,
+        (response: RazorpayResponse) => {
+          setPaymentData(response);
+          setPaymentState('success');
+        },
+        (errorMessage: string) => {
+          console.error('Payment failed:', errorMessage);
+          setPaymentState('error');
+        }
+      );
+    } finally {
+      setActivePlanId(null);
+    }
   };
 
   const handleNewPayment = () => {
@@ -38,80 +62,104 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-6">
-            <CreditCard className="w-8 h-8 text-indigo-600" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Secure Payment For Bull 8
-          </h1>
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">Pricing</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Experience seamless and secure payments powered by Razorpay's industry-leading technology
+            Powerful tools designed to make strategic investing accessible to every investor.
           </p>
         </div>
 
-        {/* Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto">
-          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-300">
-            <div className="flex items-center justify-center w-12 h-12 bg-emerald-100 rounded-lg mb-4">
-              <Shield className="w-6 h-6 text-emerald-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Bank-Grade Security</h3>
-            <p className="text-gray-600 text-sm">256-bit SSL encryption and PCI DSS compliance</p>
-          </div>
-          
-          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-300">
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mb-4">
-              <Zap className="w-6 h-6 text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Lightning Fast</h3>
-            <p className="text-gray-600 text-sm">Process payments in under 3 seconds</p>
-          </div>
-          
-          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-300">
-            <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mb-4">
-              <CheckCircle className="w-6 h-6 text-purple-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">99.9% Uptime</h3>
-            <p className="text-gray-600 text-sm">Reliable payment processing you can trust</p>
-          </div>
-        </div>
+        {/* Pricing */}
+        {paymentState === 'form' && (
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {plans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className="flex flex-col justify-between bg-white rounded-lg p-0 shadow-none border border-gray-200 overflow-hidden"
+                >
+                  {/* Icon & Title Section */}
+                  <div className={`flex flex-col items-center justify-center p-6 rounded-t-lg text-white ${plan.color}`}>
+                    {plan.icon}
+                    <h4 className="text-xl font-semibold mt-2">{plan.title}</h4>
+                  </div>
 
-        {/* Payment Section */}
-        <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-6">
-              <h2 className="text-2xl font-bold text-white text-center">
-                {paymentState === 'form' && 'Make a Payment'}
-                {paymentState === 'success' && 'Payment Complete'}
-                {paymentState === 'error' && 'Payment Failed'}
-              </h2>
-            </div>
-            
-            <div className="p-8">
-              {paymentState === 'form' && (
-                <PaymentForm onSubmit={handlePaymentSubmit} isLoading={isLoading} />
-              )}
-              
-              {paymentState === 'success' && paymentData && (
-                <PaymentSuccess paymentData={paymentData} onNewPayment={handleNewPayment} />
-              )}
-              
-              {paymentState === 'error' && (
-                <PaymentError error={error || 'Unknown error occurred'} onRetry={handleRetry} />
-              )}
+                  <div className="p-6 flex flex-col flex-grow">
+                    {/* Cap */}
+                    <p className="text-base text-gray-600 text-center mb-2">{plan.cap}</p>
+
+                    {/* Price */}
+                    <div className="text-4xl font-bold text-gray-900 text-center mb-1">₹{plan.amount.toLocaleString()}</div>
+                    <p className="text-sm text-gray-500 text-center mb-6">+Taxex/Month</p>
+
+                    {/* Features */}
+                    <ul className="text-sm text-gray-700 space-y-2 mb-6 flex-grow">
+                      {plan.id === 'starter' && (
+                        <>
+                          <li><span className="text-green-500">✔</span> Access to pre-defined strategies</li>
+                          <li><span className="text-green-500">✔</span> Live performance dashboard</li>
+                          <li><span className="text-green-500">✔</span> Quarterly performance reports</li>
+                        </>
+                      )}
+                      {plan.id === 'growth' && (
+                        <>
+                          <li><span className="text-green-500">✔</span> All Starter features</li>
+                          <li><span className="text-green-500">✔</span> Portfolio rebalancing twice a year</li>
+                          <li><span className="text-green-500">✔</span> Enhanced market insights</li>
+                        </>
+                      )}
+                      {plan.id === 'pro' && (
+                        <>
+                          <li><span className="text-green-500">✔</span> All Growth features</li>
+                          <li><span className="text-green-500">✔</span> Strategy updates</li>
+                          <li><span className="text-green-500">✔</span> Advanced risk management tools</li>
+                        </>
+                      )}
+                      {plan.id === 'elite' && (
+                        <>
+                          <li><span className="text-green-500">✔</span> All Pro features</li>
+                          <li><span className="text-green-500">✔</span> Dedicated strategy manager</li>
+                          <li><span className="text-green-500">✔</span> Priority support</li>
+                        </>
+                      )}
+                    </ul>
+
+                    {/* Button */}
+                    <button
+                      disabled={isLoading && activePlanId === plan.id}
+                      onClick={() => handlePlanPay(plan as any)}
+                      className={`mt-auto w-full flex items-center justify-center space-x-2 py-3 px-6 rounded-lg font-semibold text-white transition ${
+                        isLoading && activePlanId === plan.id ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'
+                      }`}
+                    >
+                      <span>{isLoading && activePlanId === plan.id ? 'Processing...' : `Choose ${plan.title}`}</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
+
+        {paymentState === 'success' && paymentData && (
+          <div className="max-w-md mx-auto">
+            <PaymentSuccess paymentData={paymentData} onNewPayment={handleNewPayment} />
+          </div>
+        )}
+
+        {paymentState === 'error' && (
+          <div className="max-w-md mx-auto">
+            <PaymentError error={error || 'Unknown error occurred'} onRetry={handleRetry} />
+          </div>
+        )}
 
         {/* Footer */}
         <div className="text-center mt-12">
           <p className="text-gray-500 text-sm">
-            Powered by <span className="font-semibold text-indigo-600">Razorpay</span> • 
-            Trusted by millions of businesses worldwide
+            Powered by <span className="font-semibold text-indigo-600">Razorpay</span> • Trusted by millions of businesses worldwide
           </p>
         </div>
       </div>
@@ -120,3 +168,5 @@ function App() {
 }
 
 export default App;
+
+

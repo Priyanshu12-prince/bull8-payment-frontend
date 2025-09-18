@@ -1,3 +1,5 @@
+
+
 import { useState, useCallback } from 'react';
 import { RazorpayOptions, RazorpayResponse, PaymentFormData } from '../types/razorpay';
 
@@ -20,35 +22,29 @@ export const useRazorpay = () => {
     });
   }, []);
 
-  const createOrder = useCallback(async (formData: PaymentFormData): Promise<string> => {
-    // In a real application, this would call your backend API
-    // For demo purposes, we'll simulate an order creation
-    const response = await fetch('http://localhost:3000/create-order', {
+  const createOrder = useCallback(async (plan: string, keyId: string): Promise<string> => {
+    const response = await fetch('https://372w16mm-3000.inc1.devtunnels.ms/api/v1/payment/create-order', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        amount: formData.amount * 100, // Convert to paise
-        name: formData.name,
-        email: formData.email,
-        contact: formData.contact,
-        description: formData.description,
+        plan,
+        key_id: keyId,
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create order');
+      const text = await response.text();
+      throw new Error(`Failed to create order: ${response.status} ${text}`);
     }
 
     const data = await response.json();
-    
-
-    return data.orderId;
+    return data?.data?.id;
   }, []);
 
   const initiatePayment = useCallback(async (
     formData: PaymentFormData,
+    plan: string,
+    keyId: string,
     onSuccess: (response: RazorpayResponse) => void,
     onFailure?: (error: string) => void
   ) => {
@@ -56,33 +52,55 @@ export const useRazorpay = () => {
       setIsLoading(true);
       setError(null);
 
-      // Load Razorpay script
       const isScriptLoaded = await loadRazorpayScript();
       if (!isScriptLoaded) {
         throw new Error('Failed to load Razorpay script');
       }
 
-      // Create order via backend and use returned order id
-      const orderId = await createOrder(formData);
-
+      const orderId = await createOrder(plan, keyId);
       const options: RazorpayOptions = {
-        key: 'rzp_test_RCdg9ReFdakOIV', // Replace with your Razorpay key
-        amount: formData.amount * 100, // Convert to paise
+        key: keyId,
+        amount: formData.amount*100 ,
         currency: 'INR',
         name: 'Your Company Name',
         description: formData.description,
         order_id: orderId,
-        handler: (response: RazorpayResponse) => {
-          onSuccess(response);
-        },
+       handler: async (response: RazorpayResponse) => {
+  try {
+   
+
+    console.log(response,"from resonse")
+    const verifyRes = await fetch(
+      'https://372w16mm-3000.inc1.devtunnels.ms/api/v1/payment/payment-verify',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+        }),
+      }
+    );
+
+    const verifyData = await verifyRes.json();
+
+    if (verifyData.success) {
+      onSuccess(response); 
+    } else {
+      onFailure?.('Payment verification failed');
+    }
+  } catch (err) {
+    onFailure?.('Error verifying payment');
+  }
+},
+
         prefill: {
           name: formData.name,
           email: formData.email,
           contact: formData.contact,
         },
-        theme: {
-          color: '#6366F1',
-        },
+        theme: { color: '#6366F1' },
         modal: {
           ondismiss: () => {
             setIsLoading(false);
@@ -100,7 +118,7 @@ export const useRazorpay = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [loadRazorpayScript]);
+  }, [loadRazorpayScript, createOrder]);
 
   return {
     initiatePayment,

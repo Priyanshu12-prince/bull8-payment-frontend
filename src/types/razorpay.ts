@@ -28,11 +28,11 @@ export interface RazorpayResponse {
 }
 
 export interface PaymentFormData {
-  amount: number;
-  name: string;
-  email: string;
-  contact: string;
-  description: string;
+  amount?: number;
+  name?: string;
+  email?: string;
+  contact?: string;
+  description?: string;
 }
 
 declare global {

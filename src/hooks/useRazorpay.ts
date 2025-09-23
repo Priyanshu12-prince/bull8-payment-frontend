@@ -60,10 +60,6 @@ export const useRazorpay = () => {
       const orderId = await createOrder(plan, keyId);
       const options: RazorpayOptions = {
         key: keyId,
-        amount: formData.amount*100 ,
-        currency: 'INR',
-        name: 'Your Company Name',
-        description: formData.description,
         order_id: orderId,
        handler: async (response: RazorpayResponse) => {
   try {

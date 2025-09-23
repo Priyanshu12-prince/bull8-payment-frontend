@@ -71,8 +71,8 @@ function App() {
       description: plan.description,
     };
 
-    const planCode = plan.id || 'custom';
-    const keyId = 'rzp_test_RDoRzN5gpmXr2V';
+    const planCode = plan.id;
+    const keyId = 'rzp_live_RKwUDP9xiVHswR';
 
     try {
       await initiatePayment(

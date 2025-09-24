@@ -1,13 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   ColumnDef,
+  SortingState,
+  getSortedRowModel,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
 import {data } from "../utils/data"
+import { Search, X, ChevronUp, ChevronDown, ArrowUpDown, CheckCircle, XCircle, Clock, AlertCircle, CreditCard } from "lucide-react";
 
 type Payment = {
   id: number;
@@ -38,6 +42,8 @@ export default function PaymentsTable() {
   // State for controlling the modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<string>("");
+  const [sorting, setSorting] = useState<SortingState>([{ id: "createdAt", desc: true }]);
+  const [globalFilter, setGlobalFilter] = useState<string>("");
 
   // Function to open modal with given JSON content
   const openModalWithContent = (content: string) => {
@@ -46,33 +52,90 @@ export default function PaymentsTable() {
   };
 
   // Define columns inside the component to use state
-  const columns: ColumnDef<Payment>[] = [
-    { accessorKey: "id", header: "ID" },
-    { accessorKey: "name", header: "Name" },
-    { accessorKey: "email", header: "Email" },
-    { accessorKey: "contact", header: "Contact" },
-    { accessorKey: "amount", header: "Amount" },
-    { accessorKey: "currency", header: "Currency" },
-    { accessorKey: "description", header: "Description" },
-    { accessorKey: "order_id", header: "Order ID" },
-    { accessorKey: "payment_id", header: "Payment ID" },
-    { accessorKey: "method", header: "Method" },
-    { accessorKey: "status", header: "Status" },
-    { accessorKey: "vpa", header: "VPA" },
-    { accessorKey: "fee", header: "Fee" },
-    { accessorKey: "tax", header: "Tax" },
-    { accessorKey: "payment_verified", header: "Verified" },
-    { accessorKey: "payment_status", header: "Payment Status" },
+  const columns: ColumnDef<Payment>[] = useMemo(() => [
+    { accessorKey: "id", header: () => <span>ID</span> },
+    { accessorKey: "name", header: () => <span>Name</span> },
+    { accessorKey: "email", header: () => <span>Email</span> },
+    { accessorKey: "contact", header: () => <span>Contact</span> },
+    { accessorKey: "amount", header: () => <span>Amount</span> },
+    { accessorKey: "currency", header: () => <span>Currency</span> },
+    { accessorKey: "description", header: () => <span>Description</span> },
+    { accessorKey: "order_id", header: () => <span>Order ID</span> },
+    { accessorKey: "payment_id", header: () => <span>Payment ID</span> },
+    {
+      accessorKey: "method",
+      header: () => <span>Method</span>,
+      cell: (info) => {
+        const value = info.getValue() as string | null;
+        if (!value) return null;
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700">
+            <CreditCard className="w-3.5 h-3.5" /> {value}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "status",
+      header: () => <span>Status</span>,
+      cell: (info) => {
+        const value = (info.getValue() as string | null)?.toLowerCase();
+        const map: Record<string, { bg: string; text: string; label: string; Icon: any }> = {
+          captured: { bg: "bg-emerald-50", text: "text-emerald-700", label: "Captured", Icon: CheckCircle },
+          authorized: { bg: "bg-blue-50", text: "text-blue-700", label: "Authorized", Icon: Clock },
+          failed: { bg: "bg-rose-50", text: "text-rose-700", label: "Failed", Icon: XCircle },
+          refunded: { bg: "bg-amber-50", text: "text-amber-800", label: "Refunded", Icon: AlertCircle },
+          created: { bg: "bg-slate-50", text: "text-slate-700", label: "Created", Icon: Clock },
+        };
+        const style = (value && map[value]) || { bg: "bg-slate-100", text: "text-slate-800", label: info.getValue() as string, Icon: Clock };
+        return (
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${style.bg} ${style.text}`}>
+            <style.Icon className="w-3.5 h-3.5" /> {style.label}
+          </span>
+        );
+      },
+    },
+    { accessorKey: "vpa", header: () => <span>VPA</span> },
+    { accessorKey: "fee", header: () => <span>Fee</span> },
+    { accessorKey: "tax", header: () => <span>Tax</span> },
+    {
+      accessorKey: "payment_verified",
+      header: () => <span>Verified</span>,
+      cell: (info) => {
+        const value = (info.getValue() as string | null)?.toLowerCase();
+        const yes = value === "true" || value === "yes" || value === "verified";
+        return (
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${yes ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+            {yes ? <CheckCircle className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />} {yes ? 'Yes' : 'No'}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "payment_status",
+      header: () => <span>Payment Status</span>,
+      cell: (info) => {
+        const value = (info.getValue() as string | null)?.toLowerCase();
+        const map: Record<string, { bg: string; text: string; label: string }> = {
+          success: { bg: "bg-green-100", text: "text-green-800", label: "Success" },
+          pending: { bg: "bg-yellow-100", text: "text-yellow-800", label: "Pending" },
+          failed: { bg: "bg-red-100", text: "text-red-800", label: "Failed" },
+        };
+        const style = (value && map[value]) || { bg: "bg-gray-100", text: "text-gray-800", label: info.getValue() as string };
+        return (
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${style.bg} ${style.text}`}>
+            {style.label}
+          </span>
+        );
+      },
+    },
     {
       accessorKey: "acquirer_data",
-      header: "Acquirer Data",
+      header: () => <span>Acquirer Data</span>,
       cell: (info) => {
-        // Get the original acquirer_data (could be object or string)
         const dataValue = info.getValue() as any;
         const jsonString = dataValue ? JSON.stringify(dataValue) : "";
-        // Truncate for preview
-        const shortString =
-          jsonString.length > 50 ? jsonString.substring(0, 50) + "..." : jsonString;
+        const shortString = jsonString.length > 50 ? jsonString.substring(0, 50) + "..." : jsonString;
         return (
           <div>
             <div className="whitespace-pre-wrap max-w-xs overflow-hidden">{shortString}</div>
@@ -90,12 +153,11 @@ export default function PaymentsTable() {
     },
     {
       accessorKey: "notes",
-      header: "Notes",
+      header: () => <span>Notes</span>,
       cell: (info) => {
         const dataValue = info.getValue() as any;
         const jsonString = dataValue ? JSON.stringify(dataValue) : "";
-        const shortString =
-          jsonString.length > 50 ? jsonString.substring(0, 50) + "..." : jsonString;
+        const shortString = jsonString.length > 50 ? jsonString.substring(0, 50) + "..." : jsonString;
         return (
           <div>
             <div className="whitespace-pre-wrap max-w-xs overflow-hidden">{shortString}</div>
@@ -113,12 +175,11 @@ export default function PaymentsTable() {
     },
     {
       accessorKey: "raw_payload",
-      header: "Raw Payload",
+      header: () => <span>Raw Payload</span>,
       cell: (info) => {
         const dataValue = info.getValue() as any;
         const jsonString = dataValue ? JSON.stringify(dataValue) : "";
-        const shortString =
-          jsonString.length > 50 ? jsonString.substring(0, 50) + "..." : jsonString;
+        const shortString = jsonString.length > 50 ? jsonString.substring(0, 50) + "..." : jsonString;
         return (
           <div>
             <div className="whitespace-pre-wrap max-w-xs overflow-hidden">{shortString}</div>
@@ -134,42 +195,83 @@ export default function PaymentsTable() {
         );
       },
     },
-    { accessorKey: "createdAt", header: "Created At" },
-    { accessorKey: "updatedAt", header: "Updated At" },
-  ];
+    { accessorKey: "createdAt", header: () => <span>Created At</span> },
+    { accessorKey: "updatedAt", header: () => <span>Updated At</span> },
+  ], []);
 
   const table = useReactTable({
     data,
     columns,
+    state: { sorting, globalFilter },
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
 
   return (
     <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">Payments Table</h1>
-      <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-300 text-sm">
-          <thead className="bg-gray-100">
+      <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold text-slate-900">Payments</h1>
+          <span className="text-xs text-slate-500">Industry-grade table</span>
+        </div>
+        <div className="relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Search all columns..."
+            className="w-80 max-w-full rounded-md border border-slate-300 bg-white pl-9 pr-8 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+          />
+          {globalFilter && (
+            <button
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              onClick={() => setGlobalFilter("")}
+              aria-label="Clear search"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm bg-white">
+        <table className="min-w-full text-sm">
+          <thead className="bg-slate-900 text-slate-100 sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
-                {hg.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-3 py-2 border border-gray-300 text-left"
-                  >
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))}
+                {hg.headers.map((header) => {
+                  const canSort = header.column.getCanSort();
+                  const sortDir = header.column.getIsSorted();
+                  return (
+                    <th
+                      key={header.id}
+                      onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                      className={`px-3 py-2 border-b border-slate-800 text-left font-semibold ${canSort ? 'cursor-pointer select-none hover:bg-slate-800/60' : ''}`}
+                    >
+                      <div className="flex items-center gap-1">
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {canSort && (
+                          <span className="text-slate-300">
+                            {sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : sortDir === 'desc' ? <ChevronDown className="w-3.5 h-3.5" /> : <ArrowUpDown className="w-3.5 h-3.5" />}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="hover:bg-gray-50">
+            {table.getRowModel().rows.map((row, idx) => (
+              <tr key={row.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}
-                    className="px-3 py-2 border border-gray-300 whitespace-pre-wrap max-w-xs overflow-auto"
+                    className="px-3 py-2 border-b border-slate-100 align-top whitespace-pre-wrap max-w-xs overflow-auto"
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
@@ -182,8 +284,8 @@ export default function PaymentsTable() {
 
       {/* Modal for full JSON content */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded p-4 max-w-3xl w-full">
+        <div className="fixed inset-0 flex items-center justify-center bg-slate-900/70 z-50">
+          <div className="bg-white rounded-lg p-4 max-w-3xl w-full shadow-xl">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Detail View</h2>
               <button
@@ -194,7 +296,7 @@ export default function PaymentsTable() {
               </button>
             </div>
             {/* Display the full content with formatting */}
-            <pre className="whitespace-pre-wrap bg-gray-100 p-2 overflow-auto max-h-96">
+            <pre className="whitespace-pre-wrap bg-slate-50 p-3 rounded border border-slate-200 overflow-auto max-h-96">
               {modalContent}
             </pre>
           </div>

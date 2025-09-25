@@ -265,6 +265,31 @@ export default function PaymentsTable() {
     { accessorKey: "updatedAt", header: () => <span>Updated At</span> },
   ], []);
 
+  // Fixed column width classes for consistent layout
+  const columnClassName: Record<string, string> = {
+    id: 'w-16',
+    name: 'w-40',
+    email: 'w-56',
+    contact: 'w-40',
+    amount: 'w-28 text-right',
+    currency: 'w-24',
+    description: 'w-80',
+    order_id: 'w-64',
+    payment_id: 'w-64',
+    method: 'w-36',
+    status: 'w-32',
+    vpa: 'w-44',
+    fee: 'w-28 text-right',
+    tax: 'w-28 text-right',
+    payment_verified: 'w-32',
+    payment_status: 'w-36',
+    acquirer_data: 'w-64',
+    notes: 'w-64',
+    raw_payload: 'w-64',
+    createdAt: 'w-44',
+    updatedAt: 'w-44',
+  };
+
   const table = useReactTable({
     data: tableData,
     columns,
@@ -280,8 +305,8 @@ export default function PaymentsTable() {
     <div className="p-4">
       <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold text-slate-900">Payments</h1>
-          <span className="text-xs text-slate-500">Industry-grade table</span>
+          <h1 className="text-xl font-bold text-slate-900">Payments Table</h1>
+          
         </div>
         <div className="relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -317,7 +342,7 @@ export default function PaymentsTable() {
 
       {!loading && !error && tableData.length > 0 && (
       <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm bg-white">
-        <table className="min-w-full text-m">
+        <table className="min-w-full text-m table-fixed">
           <thead className="bg-slate-900 text-slate-100 sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
@@ -325,20 +350,20 @@ export default function PaymentsTable() {
                   const canSort = header.column.getCanSort();
                   const sortDir = header.column.getIsSorted();
                   return (
-                    <th
-                      key={header.id}
+                  <th
+                    key={header.id}
                       onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                      className={`px-3 py-2 border-b border-slate-800 text-left font-semibold ${canSort ? 'cursor-pointer select-none hover:bg-slate-800/60' : ''}`}
-                    >
+                      className={`px-3 py-2 border-b border-slate-800 text-left font-semibold ${columnClassName[header.column.id] || ''} ${canSort ? 'cursor-pointer select-none hover:bg-slate-800/60' : ''}`}
+                  >
                       <div className="flex items-center gap-1">
-                        {flexRender(header.column.columnDef.header, header.getContext())}
+                    {flexRender(header.column.columnDef.header, header.getContext())}
                         {canSort && (
                           <span className="text-slate-300">
                             {sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : sortDir === 'desc' ? <ChevronDown className="w-3.5 h-3.5" /> : <ArrowUpDown className="w-3.5 h-3.5" />}
                           </span>
                         )}
                       </div>
-                    </th>
+                  </th>
                   );
                 })}
               </tr>
@@ -350,7 +375,7 @@ export default function PaymentsTable() {
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}
-                    className="px-3 py-2 border-b border-slate-100 align-top whitespace-pre-wrap max-w-xs overflow-auto"
+                    className={`px-3 py-2 border-b border-slate-100 align-top max-w-xs overflow-hidden text-ellipsis ${columnClassName[cell.column.id] || ''} ${['description','acquirer_data','notes','raw_payload'].includes(cell.column.id) ? 'whitespace-pre-wrap' : 'whitespace-nowrap truncate'}`}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>

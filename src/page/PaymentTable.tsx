@@ -200,14 +200,15 @@ export default function PaymentsTable() {
       header: () => <span>Acquirer Data</span>,
       cell: (info) => {
         const dataValue = info.getValue() as any;
-        const jsonString = dataValue ? JSON.stringify(dataValue) : "";
-        const shortString = jsonString.length > 50 ? jsonString.substring(0, 50) + "..." : jsonString;
+        const isJson = dataValue && (typeof dataValue === 'object' || Array.isArray(dataValue));
+        const jsonString = isJson ? JSON.stringify(dataValue) : (dataValue ?? '');
+        const shortString = typeof jsonString === 'string' ? jsonString.slice(0, 80) + (jsonString.length > 80 ? '...' : '') : '';
         return (
-          <div>
-            <div className="whitespace-pre-wrap max-w-xs overflow-hidden">{shortString}</div>
-            {jsonString.length > 50 && (
+          <div className="flex items-center gap-2">
+            <span className="truncate">{shortString}</span>
+            {isJson && (
               <button
-                className="text-blue-600 underline text-xs"
+                className="text-blue-600 underline text-xs flex-shrink-0"
                 onClick={() => openModalWithContent(JSON.stringify(dataValue, null, 2))}
               >
                 View more
@@ -222,14 +223,15 @@ export default function PaymentsTable() {
       header: () => <span>Notes</span>,
       cell: (info) => {
         const dataValue = info.getValue() as any;
-        const jsonString = dataValue ? JSON.stringify(dataValue) : "";
-        const shortString = jsonString.length > 50 ? jsonString.substring(0, 50) + "..." : jsonString;
+        const isJson = dataValue && (typeof dataValue === 'object' || Array.isArray(dataValue));
+        const jsonString = isJson ? JSON.stringify(dataValue) : (dataValue ?? '');
+        const shortString = typeof jsonString === 'string' ? jsonString.slice(0, 80) + (jsonString.length > 80 ? '...' : '') : '';
         return (
-          <div>
-            <div className="whitespace-pre-wrap max-w-xs overflow-hidden">{shortString}</div>
-            {jsonString.length > 50 && (
+          <div className="flex items-center gap-2">
+            <span className="truncate">{shortString}</span>
+            {isJson && (
               <button
-                className="text-blue-600 underline text-xs"
+                className="text-blue-600 underline text-xs flex-shrink-0"
                 onClick={() => openModalWithContent(JSON.stringify(dataValue, null, 2))}
               >
                 View more
@@ -244,14 +246,15 @@ export default function PaymentsTable() {
       header: () => <span>Raw Payload</span>,
       cell: (info) => {
         const dataValue = info.getValue() as any;
-        const jsonString = dataValue ? JSON.stringify(dataValue) : "";
-        const shortString = jsonString.length > 50 ? jsonString.substring(0, 50) + "..." : jsonString;
+        const isJson = dataValue && (typeof dataValue === 'object' || Array.isArray(dataValue));
+        const jsonString = isJson ? JSON.stringify(dataValue) : (dataValue ?? '');
+        const shortString = typeof jsonString === 'string' ? jsonString.slice(0, 80) + (jsonString.length > 80 ? '...' : '') : '';
         return (
-          <div>
-            <div className="whitespace-pre-wrap max-w-xs overflow-hidden">{shortString}</div>
-            {jsonString.length > 50 && (
+          <div className="flex items-center gap-2">
+            <span className="truncate">{shortString}</span>
+            {isJson && (
               <button
-                className="text-blue-600 underline text-xs"
+                className="text-blue-600 underline text-xs flex-shrink-0"
                 onClick={() => openModalWithContent(JSON.stringify(dataValue, null, 2))}
               >
                 View more
@@ -285,7 +288,7 @@ export default function PaymentsTable() {
     payment_status: 'w-36',
     acquirer_data: 'w-64',
     notes: 'w-64',
-    raw_payload: 'w-64',
+    raw_payload: 'w-74',
     createdAt: 'w-44',
     updatedAt: 'w-44',
   };
@@ -342,7 +345,7 @@ export default function PaymentsTable() {
 
       {!loading && !error && tableData.length > 0 && (
       <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm bg-white">
-        <table className="min-w-full text-m table-fixed">
+        <table className="min-w-full text-m table-fixed border-separate border-spacing-y-3 border-spacing-x-0">
           <thead className="bg-slate-900 text-slate-100 sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
@@ -375,7 +378,7 @@ export default function PaymentsTable() {
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}
-                    className={`px-3 py-2 border-b border-slate-100 align-top max-w-xs overflow-hidden text-ellipsis ${columnClassName[cell.column.id] || ''} ${['description','acquirer_data','notes','raw_payload'].includes(cell.column.id) ? 'whitespace-pre-wrap' : 'whitespace-nowrap truncate'}`}
+                    className={`px-4 py-3 align-top max-w-xs overflow-hidden text-ellipsis ${columnClassName[cell.column.id] || ''} whitespace-nowrap truncate`}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>

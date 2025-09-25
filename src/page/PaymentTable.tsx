@@ -70,6 +70,7 @@ export default function PaymentsTable() {
     { accessorKey: "name", header: () => <span>Name</span> },
     { accessorKey: "email", header: () => <span>Email</span> },
     { accessorKey: "contact", header: () => <span>Contact</span> },
+    { accessorKey: "plan", header: () => <span>Plan</span> },
     { 
       accessorKey: "amount", 
       header: () => <span>Amount</span>,

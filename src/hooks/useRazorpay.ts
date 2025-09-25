@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { RazorpayOptions, RazorpayResponse, PaymentFormData } from '../types/razorpay';
+import { BASE_URL } from '../config';
 
 export const useRazorpay = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -98,9 +99,19 @@ export const useRazorpay = () => {
         },
         theme: { color: '#6366F1' },
         modal: {
-          ondismiss: () => {
-            setIsLoading(false);
-            onFailure?.('Payment cancelled by user');
+          ondismiss: async () => {
+            try {
+              await fetch(`${BASE_URL}/payment/cancel-payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId: orderId }),
+              });
+            } catch (e) {
+              // swallow cancel errors to not block UI
+            } finally {
+              setIsLoading(false);
+              onFailure?.('Payment cancelled by user');
+            }
           },
         },
       };

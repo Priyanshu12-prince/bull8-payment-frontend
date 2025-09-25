@@ -11,7 +11,7 @@ import {
   getFilteredRowModel,
 } from "@tanstack/react-table";
 // import {data } from "../utils/data"
-import { Search, X, ChevronUp, ChevronDown, ArrowUpDown, CheckCircle, XCircle, Clock, AlertCircle, CreditCard } from "lucide-react";
+import { Search, X, ChevronUp, ChevronDown, ArrowUpDown, CheckCircle, XCircle, Clock, AlertCircle, CreditCard ,IndianRupee} from "lucide-react";
 import { useAllPaymentData } from "../hooks/useAllPayentData";
 
 type Payment = {
@@ -70,9 +70,18 @@ export default function PaymentsTable() {
     { accessorKey: "name", header: () => <span>Name</span> },
     { accessorKey: "email", header: () => <span>Email</span> },
     { accessorKey: "contact", header: () => <span>Contact</span> },
-    { accessorKey: "amount", header: () => <span>Amount</span> },
+    { 
+      accessorKey: "amount", 
+      header: () => <span>Amount</span>,
+      cell: ({ getValue }) => {
+        const value = getValue<number>(); // amount in paise
+        return <span className="flex"  >  <IndianRupee className="w-[15px]"/> {(value / 100).toFixed(2)}</span>; // convert to rupees with 2 decimals
+      }
+    },
+    
+    
     { accessorKey: "currency", header: () => <span>Currency</span> },
-    { accessorKey: "description", header: () => <span>Description</span> },
+
     { accessorKey: "order_id", header: () => <span>Order ID</span> },
     { accessorKey: "payment_id", header: () => <span>Payment ID</span> },
     {
@@ -92,38 +101,48 @@ export default function PaymentsTable() {
       accessorKey: "status",
       header: () => <span>Status</span>,
       cell: (info) => {
-        const value = (info.getValue() as string | null)?.toLowerCase();
-        const map: Record<string, { bg: string; text: string; label: string; Icon: any }> = {
-          captured: { bg: "bg-emerald-50", text: "text-emerald-700", label: "Captured", Icon: CheckCircle },
-          authorized: { bg: "bg-blue-50", text: "text-blue-700", label: "Authorized", Icon: Clock },
-          failed: { bg: "bg-rose-50", text: "text-rose-700", label: "Failed", Icon: XCircle },
-          refunded: { bg: "bg-amber-50", text: "text-amber-800", label: "Refunded", Icon: AlertCircle },
-          created: { bg: "bg-slate-50", text: "text-slate-700", label: "Created", Icon: Clock },
+        // Default to "failed" if null/undefined/empty
+        const raw = info.getValue() as string | null;
+        const value = raw ? raw.toLowerCase() : "pending";
+    
+        const map: Record<
+          string,
+          { bg: string; text: string; label: string; Icon: any }
+        > = {
+          captured: {
+            bg: "bg-emerald-50",
+            text: "text-emerald-700",
+            label: "Captured",
+            Icon: CheckCircle,
+          },
+      
+          failed: {
+            bg: "bg-rose-50",
+            text: "text-rose-700",
+            label: "Failed",
+            Icon: XCircle,
+          },
         };
-        const style = (value && map[value]) || { bg: "bg-slate-100", text: "text-slate-800", label: info.getValue() as string, Icon: Clock };
+    
+        const style =
+          map[value] ||
+          ({
+            bg: "bg-slate-100",
+            text: "text-slate-800",
+            label: raw ?? "Pending",
+            Icon: Clock,
+          } as const);
+    
         return (
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${style.bg} ${style.text}`}>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${style.bg} ${style.text}`}
+          >
             <style.Icon className="w-3.5 h-3.5" /> {style.label}
           </span>
         );
       },
     },
-    { accessorKey: "vpa", header: () => <span>VPA</span> },
-    { accessorKey: "fee", header: () => <span>Fee</span> },
-    { accessorKey: "tax", header: () => <span>Tax</span> },
-    {
-      accessorKey: "payment_verified",
-      header: () => <span>Verified</span>,
-      cell: (info) => {
-        const value = (info.getValue() as string | null)?.toLowerCase();
-        const yes = value === "true" || value === "yes" || value === "verified";
-        return (
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${yes ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
-            {yes ? <CheckCircle className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />} {yes ? 'Yes' : 'No'}
-          </span>
-        );
-      },
-    },
+    
     {
       accessorKey: "payment_status",
       header: () => <span>Payment Status</span>,
@@ -142,6 +161,39 @@ export default function PaymentsTable() {
         );
       },
     },
+    { accessorKey: "vpa", header: () => <span>VPA</span> },
+    { 
+      accessorKey: "fee", 
+      header: () => <span>Fee</span>,
+      cell: ({ getValue }) => {
+        const value = getValue<number>(); // fee in paise
+        return <span>₹{(value / 100).toFixed(2)}</span>; // convert to rupees
+      }
+    },
+    { 
+      accessorKey: "tax", 
+      header: () => <span>Tax</span>,
+      cell: ({ getValue }) => {
+        const value = getValue<number>(); // tax in paise
+        return <span>₹{(value / 100).toFixed(2)}</span>; // convert to rupees
+      }
+    }
+    ,
+    {
+      accessorKey: "payment_verified",
+      header: () => <span>Verified</span>,
+      cell: (info) => {
+        const value = (info.getValue() as string | null)?.toLowerCase();
+        const yes = value === "true" || value === "yes" || value === "verified";
+        return (
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${yes ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+            {yes ? <CheckCircle className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />} {yes ? 'Yes' : 'No'}
+          </span>
+        );
+      },
+    },
+ 
+    { accessorKey: "description", header: () => <span>Description</span> },
     {
       accessorKey: "acquirer_data",
       header: () => <span>Acquirer Data</span>,
@@ -264,7 +316,7 @@ export default function PaymentsTable() {
 
       {!loading && !error && tableData.length > 0 && (
       <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm bg-white">
-        <table className="min-w-full text-sm">
+        <table className="min-w-full text-m">
           <thead className="bg-slate-900 text-slate-100 sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>

@@ -10,8 +10,9 @@ import {
   getSortedRowModel,
   getFilteredRowModel,
 } from "@tanstack/react-table";
-import {data } from "../utils/data"
+// import {data } from "../utils/data"
 import { Search, X, ChevronUp, ChevronDown, ArrowUpDown, CheckCircle, XCircle, Clock, AlertCircle, CreditCard } from "lucide-react";
+import { useAllPaymentData } from "../hooks/useAllPayentData";
 
 type Payment = {
   id: number;
@@ -39,11 +40,23 @@ type Payment = {
 
 
 export default function PaymentsTable() {
-  // State for controlling the modal
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<string>("");
   const [sorting, setSorting] = useState<SortingState>([{ id: "createdAt", desc: true }]);
   const [globalFilter, setGlobalFilter] = useState<string>("");
+
+
+  const { payments, loading, error } = useAllPaymentData();
+  const tableData = useMemo<Payment[]>(() => {
+    const nested = (payments as any)?.data?.data;
+    if (Array.isArray(nested)) return nested as Payment[];
+    if (Array.isArray(payments)) return payments as unknown as Payment[];
+    return [] as Payment[];
+  }, [payments]);
+
+
+
 
   // Function to open modal with given JSON content
   const openModalWithContent = (content: string) => {
@@ -200,7 +213,7 @@ export default function PaymentsTable() {
   ], []);
 
   const table = useReactTable({
-    data,
+    data: tableData,
     columns,
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
@@ -237,6 +250,19 @@ export default function PaymentsTable() {
         </div>
       </div>
 
+      {loading && (
+        <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-600">Loading payments...</div>
+      )}
+
+      {!loading && error && (
+        <div className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-rose-700">Failed to load payments: {error}</div>
+      )}
+
+      {!loading && !error && tableData.length === 0 && (
+        <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-600">No payments available yet.</div>
+      )}
+
+      {!loading && !error && tableData.length > 0 && (
       <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-900 text-slate-100 sticky top-0 z-10">
@@ -281,6 +307,7 @@ export default function PaymentsTable() {
           </tbody>
         </table>
       </div>
+      )}
 
       {/* Modal for full JSON content */}
       {isModalOpen && (

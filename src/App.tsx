@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { PaymentSuccess } from './components/PaymentSuccess';
 import { PaymentError } from './components/PaymentError';
 import Pricing from './components/Pricing';
@@ -7,8 +7,11 @@ import { useRazorpay } from './hooks/useRazorpay';
 import { RazorpayResponse, PaymentFormData } from './types/razorpay';
 import PaymentsTable from './page/PaymentTable';
 import { Home, Table, CreditCard } from 'lucide-react';
+import authorizeImg from './utils/images/authorize.jpeg';
 
 type PaymentState = 'form' | 'success' | 'error';
+import { useEffect } from "react";
+import { validateUser } from "./hooks/validateUser";
 
 // Header component for navigation
 function Header() {
@@ -57,6 +60,9 @@ function Header() {
     </header>
   );
 }
+
+
+
 
 // Main pricing component
 function PricingPage() {
@@ -143,13 +149,68 @@ function PricingPage() {
 
 // Main App component with routing
 function App() {
+
+  // Parse the URL to extract 'data' and 'sig' query parameters
+
+  function useQuery() {
+    return new URLSearchParams(useLocation().search);
+  }
+
+  function UnauthorizedPage() {
+    const location = useLocation();
+    const message = (location as any)?.state?.message as string | undefined;
+    return (
+      <div className="w-screen h-screen bg-white flex flex-col items-center justify-center">
+        <img src={authorizeImg} alt="Unauthorized" className="w-screen h-screen object-cover" />
+        <div className="absolute bottom-6 left-0 right-0 text-center">
+          {message && <p className="text-sm text-slate-600 mb-4">{message}</p>}
+          <Link to="/" className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Go to Home</Link>
+        </div>
+      </div>
+    );
+  }
+
+  function ValidateUserOnLoad() {
+    const query = useQuery();
+    const data = query.get("data");
+    const sig = query.get("sig");
+    const navigate = useNavigate();
+
+
+    console.log(query, data, sig)
+    // Only call validateUser if both data and sig are present
+    useEffect(() => {
+      if (data && sig) {
+        validateUser(data, sig)
+          .then((res) => {
+            const ok = !!res?.success;
+            if (!ok) {
+              navigate('/unauthorized', { replace: true, state: { message: res?.message } });
+            }
+          })
+          .catch(() => {
+            navigate('/unauthorized', { replace: true, state: { message: 'Invalid signature! Data may have been tampered with.' } });
+          })
+          .finally(() => {});
+      } else {
+        // No query provided; nothing to validate
+      }
+    }, [data, sig, navigate]);
+
+    return null;
+  }
+  
+
+  
   return (
     <Router>
       <div className="min-h-screen bg-slate-50">
         <Header />
+        <ValidateUserOnLoad />
         <Routes>
           <Route path="/" element={<PricingPage />} />
           <Route path="/payment-table" element={<PaymentsTable />} />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
         </Routes>
       </div>
     </Router>

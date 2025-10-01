@@ -38,6 +38,30 @@ type Payment = {
   updatedAt: string;
 };
 
+function formatDateTime(value: string) {
+  if (!value) return "-";
+  const d = new Date(value);
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hours = pad(d.getHours());
+  const minutes = pad(d.getMinutes());
+  const seconds = pad(d.getSeconds());
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+
+
+// Capitalize the first letter of each word
+function capitalizeWords(input: string | null | undefined): string {
+  const value = (input ?? '').toString();
+  return value
+    .toLowerCase()
+    .replace(/\b([a-z])(\w*)/g, (_: string, first: string, rest: string) => `${first.toUpperCase()}${rest}`);
+}
 
 export default function PaymentsTable() {
 
@@ -67,10 +91,10 @@ export default function PaymentsTable() {
   // Define columns inside the component to use state
   const columns: ColumnDef<Payment>[] = useMemo(() => [
     { accessorKey: "id", header: () => <span>ID</span> },
-    { accessorKey: "name", header: () => <span>Name</span> },
+    { accessorKey: "name", header: () => <span>Name</span>, cell: ({ getValue }) => <span>{capitalizeWords(getValue() as string)}</span> },
     { accessorKey: "email", header: () => <span>Email</span> },
     { accessorKey: "contact", header: () => <span>Contact</span> },
-    { accessorKey: "plan", header: () => <span>Plan</span> },
+    { accessorKey: "plan", header: () => <span>Plan</span>, cell: ({ getValue }) => <span>{capitalizeWords(getValue() as string)}</span> },
     { 
       accessorKey: "amount", 
       header: () => <span>Amount</span>,
@@ -92,8 +116,8 @@ export default function PaymentsTable() {
         const value = info.getValue() as string | null;
         if (!value) return null;
         return (
-          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700">
-            <CreditCard className="w-3.5 h-3.5" /> {value}
+          <span className="inline-flex items-center gap-1 rounded-full px-4 py-1 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700">
+            <CreditCard className="w-3.5 h-3.5" /> {capitalizeWords(value)}
           </span>
         );
       },
@@ -128,8 +152,8 @@ export default function PaymentsTable() {
         const style =
           map[value] ||
           ({
-            bg: "bg-slate-100",
-            text: "text-slate-800",
+            bg: "bg-yellow-100",
+            text: "text-yellow-800",
             label: raw ?? "Pending",
             Icon: Clock,
           } as const);
@@ -138,7 +162,7 @@ export default function PaymentsTable() {
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${style.bg} ${style.text}`}
           >
-            <style.Icon className="w-3.5 h-3.5" /> {style.label}
+            <style.Icon className="w-3.5 h-3.5" /> {capitalizeWords(style.label as string)}
           </span>
         );
       },
@@ -152,9 +176,9 @@ export default function PaymentsTable() {
         const map: Record<string, { bg: string; text: string; label: string }> = {
           success: { bg: "bg-green-100", text: "text-green-800", label: "Success" },
           pending: { bg: "bg-yellow-100", text: "text-yellow-800", label: "Pending" },
-          failed: { bg: "bg-red-100", text: "text-red-800", label: "Failed" },
+          cancelled: { bg: "bg-red-100", text: "text-red-800", label: "Cancelled" },
         };
-        const style = (value && map[value]) || { bg: "bg-gray-100", text: "text-gray-800", label: info.getValue() as string };
+        const style = (value && map[value]) || { bg: "bg-gray-100", text: "text-gray-800", label: capitalizeWords(info.getValue() as string) };
         return (
           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${style.bg} ${style.text}`}>
             {style.label}
@@ -194,7 +218,7 @@ export default function PaymentsTable() {
       },
     },
  
-    { accessorKey: "description", header: () => <span>Description</span> },
+    { accessorKey: "description", header: () => <span>Description</span>, cell: ({ getValue }) => <span>{capitalizeWords(getValue() as string)}</span> },
     {
       accessorKey: "acquirer_data",
       header: () => <span>Acquirer Data</span>,
@@ -264,8 +288,17 @@ export default function PaymentsTable() {
         );
       },
     },
-    { accessorKey: "createdAt", header: () => <span>Created At</span> },
-    { accessorKey: "updatedAt", header: () => <span>Updated At</span> },
+ {
+  accessorKey: "createdAt",
+  header: () => <span>Created At</span>,
+  cell: (info) => formatDateTime(info.getValue() as string),
+},
+{
+  accessorKey: "updatedAt",
+  header: () => <span>Updated At</span>,
+  cell: (info) => formatDateTime(info.getValue() as string),
+},
+
   ], []);
 
   // Fixed column width classes for consistent layout

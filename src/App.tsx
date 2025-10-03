@@ -7,7 +7,7 @@ import { useRazorpay } from './hooks/useRazorpay';
 import { RazorpayResponse, PaymentFormData } from './types/razorpay';
 import PaymentsTable from './page/PaymentTable';
 import { Home, Table, CreditCard } from 'lucide-react';
-import authorizeImg from './utils/images/authorize.jpeg';
+import authorizeImg from './utils/images/unAuthorized.jpeg';
 
 type PaymentState = 'form' | 'success' | 'error';
 import { useEffect } from "react";
@@ -64,7 +64,7 @@ function Header() {
 
 
 
-// Main pricing component
+
 function PricingPage() {
   const [paymentState, setPaymentState] = useState<PaymentState>('form');
   const [paymentData, setPaymentData] = useState<RazorpayResponse | null>(null);
@@ -147,10 +147,10 @@ function PricingPage() {
   );
 }
 
-// Main App component with routing
+
 function App() {
 
-  // Parse the URL to extract 'data' and 'sig' query parameters
+
 
   function useQuery() {
     return new URLSearchParams(useLocation().search);
@@ -160,8 +160,8 @@ function App() {
     const location = useLocation();
     const message = (location as any)?.state?.message as string | undefined;
     return (
-      <div className="w-screen h-screen bg-white flex flex-col items-center justify-center">
-        <img src={authorizeImg} alt="Unauthorized" className="w-screen h-screen object-cover" />
+      <div className="fixed inset-0 bg-white flex items-center justify-center">
+        <img src={authorizeImg} alt="Unauthorized" className="w-screen h-screen object-contain" />
         <div className="absolute bottom-6 left-0 right-0 text-center">
           {message && <p className="text-sm text-slate-600 mb-4">{message}</p>}
           <Link to="/" className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Go to Home</Link>
@@ -177,24 +177,30 @@ function App() {
     const navigate = useNavigate();
 
 
-    console.log(query, data, sig)
-    // Only call validateUser if both data and sig are present
+
     useEffect(() => {
-      if (data && sig) {
-        validateUser(data, sig)
-          .then((res) => {
-            const ok = !!res?.success;
-            if (!ok) {
-              navigate('/unauthorized', { replace: true, state: { message: res?.message } });
-            }
-          })
-          .catch(() => {
-            navigate('/unauthorized', { replace: true, state: { message: 'Invalid signature! Data may have been tampered with.' } });
-          })
-          .finally(() => {});
-      } else {
-        // No query provided; nothing to validate
+      if (!(data && sig)) {
+        return;
       }
+      void (async () => {
+        try {
+          const res = await validateUser(data, sig);
+           console.log(res,'from app priyanshi')
+          const ok = !!res?.success;
+          if (ok) {
+            const userData = res?.data?.userData;
+            if (userData) {
+              try { localStorage.setItem('userData', JSON.stringify(userData)); } catch {}
+            }
+          } else {
+            try { localStorage.removeItem('userData'); } catch {}
+            navigate('/unauthorized', { replace: true, state: { message: res?.message } });
+          }
+        } catch {
+          try { localStorage.removeItem('userData'); } catch {}
+          navigate('/unauthorized', { replace: true, state: { message: 'Invalid signature! Data may have been tampered with.' } });
+        }
+      })();
     }, [data, sig, navigate]);
 
     return null;
@@ -205,12 +211,15 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-slate-50">
+       <Routes>
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
+    </Routes>
         <Header />
         <ValidateUserOnLoad />
         <Routes>
           <Route path="/" element={<PricingPage />} />
           <Route path="/payment-table" element={<PaymentsTable />} />
-          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
         </Routes>
       </div>
     </Router>

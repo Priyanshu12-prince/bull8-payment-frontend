@@ -15,8 +15,10 @@ import { Search, X, ChevronUp, ChevronDown, ArrowUpDown, CheckCircle, XCircle, C
 import { useAllPaymentData } from "../hooks/useAllPayentData";
 
 type Payment = {
-  id: number;
+  uuid: number;
   name: string;
+  userDomainUrl: string;
+  userId: string;
   email: string;
   contact: string;
   amount: string;
@@ -90,7 +92,9 @@ export default function PaymentsTable() {
 
   // Define columns inside the component to use state
   const columns: ColumnDef<Payment>[] = useMemo(() => [
-    { accessorKey: "id", header: () => <span>ID</span> },
+    { accessorKey: "uuid", header: () => <span>ID</span> },
+    { accessorKey: "userDomainUrl", header: () => <span>User Domain</span> },
+    { accessorKey: "userId", header: () => <span>User ID</span> },
     { accessorKey: "name", header: () => <span>Name</span>, cell: ({ getValue }) => <span>{capitalizeWords(getValue() as string)}</span> },
     { accessorKey: "email", header: () => <span>Email</span> },
     { accessorKey: "contact", header: () => <span>Contact</span> },

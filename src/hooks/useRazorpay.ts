@@ -24,12 +24,20 @@ export const useRazorpay = () => {
   }, []);
 
   const createOrder = useCallback(async (plan: string, keyId: string): Promise<string> => {
+    let userData: unknown = null;
+    try {
+      const raw = localStorage.getItem('userData');
+      if (raw) userData = JSON.parse(raw);
+    } catch {}
+
     const response = await fetch('https://372w16mm-3000.inc1.devtunnels.ms/api/v1/payment/create-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         plan,
         key_id: keyId,
+        userData,
+        
       }),
     });
 

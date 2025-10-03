@@ -185,7 +185,6 @@ function App() {
       void (async () => {
         try {
           const res = await validateUser(data, sig);
-           console.log(res,'from app priyanshi')
           const ok = !!res?.success;
           if (ok) {
             const userData = res?.data?.userData;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { PaymentSuccess } from './components/PaymentSuccess';
 import { PaymentError } from './components/PaymentError';
 import Pricing from './components/Pricing';
@@ -170,6 +170,17 @@ function App() {
     );
   }
 
+  function ProtectedRoute({ children }: { children: JSX.Element }) {
+    let isAuthorized = false;
+    try {
+      isAuthorized = !!localStorage.getItem('userData');
+    } catch {}
+    if (!isAuthorized) {
+      return <Navigate to="/unauthorized" replace state={{ message: 'Please authorize to continue' }} />;
+    }
+    return children;
+  }
+
   function ValidateUserOnLoad() {
     const query = useQuery();
     const data = query.get("data");
@@ -216,7 +227,7 @@ function App() {
         <Header />
         <ValidateUserOnLoad />
         <Routes>
-          <Route path="/" element={<PricingPage />} />
+          <Route path="/" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
           <Route path="/payment-table" element={<PaymentsTable />} />
 
         </Routes>

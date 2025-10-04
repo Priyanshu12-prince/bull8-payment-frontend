@@ -18,6 +18,7 @@ type Payment = {
   uuid: number;
   name: string;
   userDomainUrl: string;
+  ctlId: string;
   userId: string;
   email: string;
   contact: string;
@@ -93,8 +94,10 @@ export default function PaymentsTable() {
   // Define columns inside the component to use state
   const columns: ColumnDef<Payment>[] = useMemo(() => [
     { accessorKey: "uuid", header: () => <span>ID</span> },
-    { accessorKey: "userDomainUrl", header: () => <span>User Domain</span> },
     { accessorKey: "userId", header: () => <span>User ID</span> },
+    { accessorKey: "ctlId", header: () => <span>CTL ID</span> },
+    { accessorKey: "userDomainUrl", header: () => <span>User Domain</span> },
+   
     { accessorKey: "name", header: () => <span>Name</span>, cell: ({ getValue }) => <span>{capitalizeWords(getValue() as string)}</span> },
     { accessorKey: "email", header: () => <span>Email</span> },
     { accessorKey: "contact", header: () => <span>Contact</span> },

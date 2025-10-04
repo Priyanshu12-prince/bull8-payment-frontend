@@ -72,9 +72,6 @@ export const useRazorpay = () => {
         order_id: orderId,
        handler: async (response: RazorpayResponse) => {
   try {
-   
-
-    console.log(response,"from resonse")
     const verifyRes = await fetch(
       'https://372w16mm-3000.inc1.devtunnels.ms/api/v1/payment/payment-verify',
       {

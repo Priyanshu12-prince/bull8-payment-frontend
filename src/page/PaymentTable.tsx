@@ -14,6 +14,23 @@ import {
 import { Search, X, ChevronUp, ChevronDown, ArrowUpDown, CheckCircle, XCircle, Clock, AlertCircle, CreditCard ,IndianRupee} from "lucide-react";
 import { useAllPaymentData } from "../hooks/useAllPayentData";
 
+// utils/date.ts
+ function formatDateTimeToIST(dateString: string | Date) {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  return date.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+
+
 type Payment = {
   uuid: number;
   name: string;
@@ -295,25 +312,29 @@ export default function PaymentsTable() {
         );
       },
     },
- {
-  accessorKey: "createdAt",
-  header: () => <span>Created At</span>,
-  cell: (info) => formatDateTime(info.getValue() as string),
-},
-{
-  accessorKey: "updatedAt",
-  header: () => <span>Updated At</span>,
-  cell: (info) => formatDateTime(info.getValue() as string),
-},
+    {
+      accessorKey: "createdAt",
+      header: () => <span>Created At</span>,
+      cell: (info) => formatDateTimeToIST(info.getValue() as string),
+    },
+    {
+      accessorKey: "updatedAt",
+      header: () => <span>Updated At</span>,
+      cell: (info) => formatDateTimeToIST(info.getValue() as string),
+    },
 
   ], []);
 
   // Fixed column width classes for consistent layout
   const columnClassName: Record<string, string> = {
     id: 'w-16',
+    userId: 'w-16',
+    ctlId: 'w-16',
+    userDomainUrl: 'w-40',
     name: 'w-40',
     email: 'w-56',
     contact: 'w-40',
+    plan: 'w-40',
     amount: 'w-28 text-right',
     currency: 'w-24',
     description: 'w-80',

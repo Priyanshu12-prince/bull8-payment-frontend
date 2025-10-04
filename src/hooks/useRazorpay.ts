@@ -22,7 +22,7 @@ export const useRazorpay = () => {
       document.body.appendChild(script);
     });
   }, []);
-
+  const raw = localStorage.getItem('userData');
   const createOrder = useCallback(async (plan: string, keyId: string): Promise<string> => {
     let userData: unknown = null;
     try {
@@ -60,6 +60,11 @@ export const useRazorpay = () => {
     try {
       setIsLoading(true);
       setError(null);
+      let userData: unknown = null;
+      try {
+        const raw = localStorage.getItem('userData');
+        if (raw) userData = JSON.parse(raw);
+      } catch {}
 
       const isScriptLoaded = await loadRazorpayScript();
       if (!isScriptLoaded) {
@@ -96,12 +101,12 @@ export const useRazorpay = () => {
     onFailure?.('Error verifying payment');
   }
 },
-
         prefill: {
-          name: formData.name,
-          email: formData.email,
-          contact: formData.contact,
+          name:userData?.name || '',
+          email:userData?.email || '',
+          contact:userData?.contact || '',
         },
+       
         theme: { color: '#6366F1' },
         modal: {
           ondismiss: async () => {

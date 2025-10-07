@@ -112,7 +112,7 @@ export default function PaymentsTable() {
   const columns: ColumnDef<Payment>[] = useMemo(() => [
     { accessorKey: "uuid", header: () => <span>ID</span> },
     { accessorKey: "userId", header: () => <span>User ID</span> },
-    { accessorKey: "ctlId", header: () => <span>CTL ID</span> },
+    { accessorKey: "ctclId", header: () => <span>CTL ID</span> },
     { accessorKey: "userDomainUrl", header: () => <span>User Domain</span> },
    
     { accessorKey: "name", header: () => <span>Name</span>, cell: ({ getValue }) => <span>{capitalizeWords(getValue() as string)}</span> },

@@ -64,6 +64,7 @@ export const useRazorpay = () => {
       try {
         const raw = localStorage.getItem('userData');
         if (raw) userData = JSON.parse(raw);
+   
       } catch {}
 
       const isScriptLoaded = await loadRazorpayScript();
@@ -101,12 +102,13 @@ export const useRazorpay = () => {
     onFailure?.('Error verifying payment');
   }
 },
-        prefill: {
-          name:userData?.name || '',
-          email:userData?.email || '',
-          contact:userData?.contact || '',
-        },
-       
+
+    prefill: {
+      name: userData?.name || '',
+      email: userData?.email || '',
+      contact: userData?.contact || '',
+    },
+          
         theme: { color: '#6366F1' },
         modal: {
           ondismiss: async () => {

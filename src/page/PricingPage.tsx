@@ -1,20 +1,12 @@
 
 
 import { useState } from 'react';
-// import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { PaymentSuccess } from '../components/PaymentSuccess';
 import { PaymentError } from '../components/PaymentError';
 import Pricing from '../components/Pricing';
 import { useRazorpay } from '../hooks/useRazorpay';
 import { RazorpayResponse, PaymentFormData } from '../types/razorpay';
-// import PaymentsTable from './PaymentTable';
-// import { Home, Table, CreditCard } from 'lucide-react';
-// import authorizeImg from './utils/images/unAuthorized.jpeg';
-
 type PaymentState = 'form' | 'success' | 'error';
-// import { useEffect } from "react";
-// import { validateUser } from '../hooks/validateUser';
-
  const  PricingPage =()=> {
   const [paymentState, setPaymentState] = useState<PaymentState>('form');
   const [paymentData, setPaymentData] = useState<RazorpayResponse | null>(null);

@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { RazorpayOptions, RazorpayResponse } from '../types/razorpay';
-import { BASE_URL } from '../config';
+import { apiConfig } from '../config/baseUrlConfig';
+console.log(apiConfig,'from  th')
 
 export const useRazorpay = () => {
   const [isLoading, setIsLoading] = useState(false);

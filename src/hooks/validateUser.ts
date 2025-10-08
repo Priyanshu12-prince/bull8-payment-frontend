@@ -1,5 +1,7 @@
-import { BASE_URL } from "../config";
+import { apiConfig } from "../config/baseUrlConfig";
 import axios from "axios";
+
+const BASE_URL=apiConfig.BASE_URL;
 
 export async function validateUser(data: any, sig: any) {
   const shouldEncode = typeof data === 'string' && !/%[0-9A-Fa-f]{2}/.test(data);

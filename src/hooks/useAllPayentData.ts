@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { BASE_URL } from "../config";
+import { apiConfig } from "../config/baseUrlConfig";
 import axios from "axios";
+
+const BASE_URL= apiConfig.BASE_URL;
 
 export function useAllPaymentData() {
   const [payments, setPayments] = useState<any[]>([]);

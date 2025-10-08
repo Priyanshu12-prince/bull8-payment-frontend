@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { apiConfig } from "../config/baseUrlConfig";
 import axios from "axios";
 
-const BASE_URL= apiConfig.BASE_URL;
+const {BASE_URL, VERSION}= apiConfig;
 
 export function useAllPaymentData() {
   const [payments, setPayments] = useState<any[]>([]);
@@ -15,7 +15,7 @@ export function useAllPaymentData() {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get(`${BASE_URL}/dash/getAllPayment`);
+        const response = await axios.get(`${BASE_URL}${VERSION}/dash/getAllPayment`);
         if (isMounted) {
           setPayments(response.data || []);
         }

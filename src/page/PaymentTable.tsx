@@ -10,11 +10,8 @@ import {
   getSortedRowModel,
   getFilteredRowModel,
 } from "@tanstack/react-table";
-// import {data } from "../utils/data"
 import { Search, X, ChevronUp, ChevronDown, ArrowUpDown, CheckCircle, XCircle, Clock, AlertCircle, CreditCard ,IndianRupee} from "lucide-react";
 import { useAllPaymentData } from "../hooks/useAllPayentData";
-
-// utils/date.ts
  function formatDateTimeToIST(dateString: string | Date) {
   if (!dateString) return "-";
   const date = new Date(dateString);

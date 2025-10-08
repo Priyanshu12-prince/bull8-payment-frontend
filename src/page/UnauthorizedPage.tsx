@@ -2,6 +2,7 @@
  
  const  UnauthorizedPage =()=> {
     const location = useLocation();
+      
     return (
       <div className="fixed inset-0 bg-white flex items-center justify-center">
         <img src={authorizeImg} alt="Unauthorized" className="w-screen h-screen object-contain" />

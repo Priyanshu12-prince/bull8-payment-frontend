@@ -62,7 +62,7 @@ function App() {
       <div className="min-h-screen bg-slate-50">
        <Routes>
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
-    </Routes>
+     </Routes>
         <Header />
         <ValidateUserOnLoad />
         <Routes>

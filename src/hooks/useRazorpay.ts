@@ -1,7 +1,7 @@
 
 
 import { useState, useCallback } from 'react';
-import { RazorpayOptions, RazorpayResponse, PaymentFormData } from '../types/razorpay';
+import { RazorpayOptions, RazorpayResponse } from '../types/razorpay';
 import { BASE_URL } from '../config';
 
 export const useRazorpay = () => {
@@ -51,7 +51,6 @@ export const useRazorpay = () => {
   }, []);
 
   const initiatePayment = useCallback(async (
-    formData: PaymentFormData,
     plan: string,
     keyId: string,
     onSuccess: (response: RazorpayResponse) => void,

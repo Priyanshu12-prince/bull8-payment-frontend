@@ -5,8 +5,11 @@ import { PaymentSuccess } from '../components/PaymentSuccess';
 import { PaymentError } from '../components/PaymentError';
 import Pricing from '../components/Pricing';
 import { useRazorpay } from '../hooks/useRazorpay';
-import { RazorpayResponse, PaymentFormData } from '../types/razorpay';
+import { RazorpayResponse } from '../types/razorpay';
+
 type PaymentState = 'form' | 'success' | 'error';
+
+
  const  PricingPage =()=> {
   const [paymentState, setPaymentState] = useState<PaymentState>('form');
   const [paymentData, setPaymentData] = useState<RazorpayResponse | null>(null);
@@ -14,18 +17,15 @@ type PaymentState = 'form' | 'success' | 'error';
   const [activePlanId, setActivePlanId] = useState<string | null>(null);
 
   const handlePlanPay = async (plan: { id: string; amount: number; description: string }) => {
+
+     
     setActivePlanId(plan.id);
-    const formData: PaymentFormData = {
-      amount: plan.amount,
-      description: plan.description,
-    };
 
     const planCode = plan.id;
     const keyId = 'rzp_live_RKwUDP9xiVHswR';
 
     try {
       await initiatePayment(
-        formData,
         planCode,
         keyId,
         (response: RazorpayResponse) => {

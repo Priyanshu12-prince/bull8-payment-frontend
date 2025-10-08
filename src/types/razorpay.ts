@@ -22,13 +22,7 @@ export interface RazorpayResponse {
   razorpay_signature: string;
 }
 
-export interface PaymentFormData {
-  amount?: number;
-  name?: string;
-  email?: string;
-  contact?: string;
-  description?: string;
-}
+
 
 declare global {
   interface Window {

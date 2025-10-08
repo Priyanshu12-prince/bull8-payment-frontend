@@ -1,11 +1,23 @@
-
-
 import { useState, useCallback } from 'react';
 import { RazorpayOptions, RazorpayResponse } from '../types/razorpay';
 import { apiConfig } from '../config/baseUrlConfig';
 
+const { BASE_URL, VERSION } = apiConfig;
 
-const {BASE_URL,VERSION}=apiConfig;
+interface UserData {
+  name?: string;
+  email?: string;
+  contact?: string;
+}
+
+const getUserData = (): UserData | null => {
+  try {
+    const raw = localStorage.getItem('userData');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
 
 export const useRazorpay = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,10 +25,7 @@ export const useRazorpay = () => {
 
   const loadRazorpayScript = useCallback((): Promise<boolean> => {
     return new Promise((resolve) => {
-      if (window.Razorpay) {
-        resolve(true);
-        return;
-      }
+      if (window.Razorpay) return resolve(true);
 
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -25,24 +34,12 @@ export const useRazorpay = () => {
       document.body.appendChild(script);
     });
   }, []);
-  const raw = localStorage.getItem('userData');
-  const createOrder = useCallback(async (plan: string, keyId: string): Promise<string> => {
-    let userData: unknown = null;
-    try {
-      const raw = localStorage.getItem('userData');
-      if (raw) userData = JSON.parse(raw);
-    } catch {}
 
-    // https://372w16mm-3000.inc1.devtunnels.ms/api/v1/payment/create-order
+  const createOrder = useCallback(async (plan: string, keyId: string, userData: UserData | null): Promise<string> => {
     const response = await fetch(`${BASE_URL}${VERSION}payment/create-order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        plan,
-        key_id: keyId,
-        userData,
-        
-      }),
+      body: JSON.stringify({ plan, key_id: keyId, userData }),
     });
 
     if (!response.ok) {
@@ -54,98 +51,88 @@ export const useRazorpay = () => {
     return data?.data?.id;
   }, []);
 
-  const initiatePayment = useCallback(async (
-    plan: string,
-    keyId: string,
-    onSuccess: (response: RazorpayResponse) => void,
-    onFailure?: (error: string) => void
-  ) => {
+  const verifyPayment = async (response: RazorpayResponse): Promise<boolean> => {
+    const res = await fetch(`${BASE_URL}${VERSION}payment/payment-verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature,
+      }),
+    });
+    const data = await res.json();
+    return data.success;
+  };
+
+  const cancelPayment = async (orderId: string) => {
     try {
-      setIsLoading(true);
-      setError(null);
-      let userData: unknown = null;
-      try {
-        const raw = localStorage.getItem('userData');
-        if (raw) userData = JSON.parse(raw);
-   
-      } catch {}
-
-      const isScriptLoaded = await loadRazorpayScript();
-      if (!isScriptLoaded) {
-        throw new Error('Failed to load Razorpay script');
-      }
-
-      const orderId = await createOrder(plan, keyId);
-      const options: RazorpayOptions = {
-        key: keyId,
-        order_id: orderId,
-       handler: async (response: RazorpayResponse) => {
-  try {
-    // https://372w16mm-3000.inc1.devtunnels.ms/api/v1/payment/payment-verify
-    const verifyRes = await fetch(
-      `${BASE_URL}${VERSION}payment/payment-verify`,
-      {
+      await fetch(`${BASE_URL}${VERSION}/payment/cancel-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_signature: response.razorpay_signature,
-        }),
-      }
-    );
-
-    const verifyData = await verifyRes.json();
-
-    if (verifyData.success) {
-      onSuccess(response); 
-    } else {
-      onFailure?.('Payment verification failed');
+        body: JSON.stringify({ orderId }),
+      });
+    } catch (e) {
+      console.error('Cancel payment failed', e);
     }
-  } catch (err) {
-    onFailure?.('Error verifying payment');
-  }
-},
+  };
 
-    prefill: {
-      name: userData?.name || '',
-      email: userData?.email || '',
-      contact: userData?.contact || '',
-    },
-          
-        theme: { color: '#6366F1' },
-        modal: {
-          ondismiss: async () => {
+  const initiatePayment = useCallback(
+    async (
+      plan: string,
+      keyId: string,
+      onSuccess: (response: RazorpayResponse) => void,
+      onFailure?: (error: string) => void
+    ) => {
+      setIsLoading(true);
+      setError(null);
+
+      const userData = getUserData();
+
+      try {
+        const isScriptLoaded = await loadRazorpayScript();
+        if (!isScriptLoaded) throw new Error('Failed to load Razorpay script');
+
+        const orderId = await createOrder(plan, keyId, userData);
+
+        const options: RazorpayOptions = {
+          key: keyId,
+          order_id: orderId,
+          handler: async (response) => {
             try {
-              await fetch(`${BASE_URL}${VERSION}/payment/cancel-payment`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderId: orderId }),
-              });
-            } catch (e) {
-              // swallow cancel errors to not block UI
-            } finally {
-              setIsLoading(false);
-              onFailure?.('Payment cancelled by user');
+              const success = await verifyPayment(response);
+              if (success) onSuccess(response);
+              else onFailure?.('Payment verification failed');
+            } catch {
+              onFailure?.('Error verifying payment');
             }
           },
-        },
-      };
+          prefill: {
+            name: userData?.name || '',
+            email: userData?.email || '',
+            contact: userData?.contact || '',
+          },
+          theme: { color: '#6366F1' },
+          modal: {
+            ondismiss: async () => {
+              await cancelPayment(orderId);
+              setIsLoading(false);
+              onFailure?.('Payment cancelled by user');
+            },
+          },
+        };
 
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Payment failed';
-      setError(errorMessage);
-      onFailure?.(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [loadRazorpayScript, createOrder]);
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Payment failed';
+        setError(errorMessage);
+        onFailure?.(errorMessage);
+        setIsLoading(false);
+      }
+    },
+    [createOrder, loadRazorpayScript]
+  );
 
-  return {
-    initiatePayment,
-    isLoading,
-    error,
-  };
+  return { initiatePayment, isLoading, error };
 };

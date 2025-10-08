@@ -3,7 +3,9 @@
 import { useState, useCallback } from 'react';
 import { RazorpayOptions, RazorpayResponse } from '../types/razorpay';
 import { apiConfig } from '../config/baseUrlConfig';
-console.log(apiConfig,'from  th')
+
+
+const {BASE_URL,VERSION}=apiConfig;
 
 export const useRazorpay = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +33,8 @@ export const useRazorpay = () => {
       if (raw) userData = JSON.parse(raw);
     } catch {}
 
-    const response = await fetch('https://372w16mm-3000.inc1.devtunnels.ms/api/v1/payment/create-order', {
+    // https://372w16mm-3000.inc1.devtunnels.ms/api/v1/payment/create-order
+    const response = await fetch(`${BASE_URL}${VERSION}payment/create-order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -78,8 +81,9 @@ export const useRazorpay = () => {
         order_id: orderId,
        handler: async (response: RazorpayResponse) => {
   try {
+    // https://372w16mm-3000.inc1.devtunnels.ms/api/v1/payment/payment-verify
     const verifyRes = await fetch(
-      'https://372w16mm-3000.inc1.devtunnels.ms/api/v1/payment/payment-verify',
+      `${BASE_URL}${VERSION}payment/payment-verify`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,7 +117,7 @@ export const useRazorpay = () => {
         modal: {
           ondismiss: async () => {
             try {
-              await fetch(`${BASE_URL}/payment/cancel-payment`, {
+              await fetch(`${BASE_URL}${VERSION}/payment/cancel-payment`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ orderId: orderId }),

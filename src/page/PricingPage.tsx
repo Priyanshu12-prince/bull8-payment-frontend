@@ -6,8 +6,9 @@ import { PaymentError } from '../components/PaymentError';
 import Pricing from '../components/Pricing';
 import { useRazorpay } from '../hooks/useRazorpay';
 import { RazorpayResponse } from '../types/razorpay';
+import { PaymentCancelled } from '../components/PaymentCancelled';
 
-type PaymentState = 'form' | 'success' | 'error';
+type PaymentState = 'form' | 'success' | 'error' | 'cancel';
 
 
  const  PricingPage =()=> {
@@ -15,6 +16,11 @@ type PaymentState = 'form' | 'success' | 'error';
   const [paymentData, setPaymentData] = useState<RazorpayResponse | null>(null);
   const { initiatePayment, isLoading, error } = useRazorpay();
   const [activePlanId, setActivePlanId] = useState<string | null>(null);
+
+      const handleCancel = () => {
+      setPaymentState('cancel');
+    };
+
 
   const handlePlanPay = async (plan: { id: string; amount: number; description: string }) => {
 
@@ -35,7 +41,8 @@ type PaymentState = 'form' | 'success' | 'error';
         (errorMessage: string) => {
           console.error('Payment failed:', errorMessage);
           setPaymentState('error');
-        }
+        },
+        handleCancel // ✅ new
       );
     } finally {
       setActivePlanId(null);
@@ -72,6 +79,10 @@ type PaymentState = 'form' | 'success' | 'error';
             <PaymentError error={error || 'Unknown error occurred'} onRetry={handleRetry} />
           </div>
         )}
+
+                    {paymentState === 'cancel' && (
+              <PaymentCancelled onRetry={handleRetry} />
+            )}
 
         {/* Footer */}
         <div className="text-center mt-16">

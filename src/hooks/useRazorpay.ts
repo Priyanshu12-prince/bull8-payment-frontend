@@ -82,7 +82,8 @@ export const useRazorpay = () => {
       plan: string,
       keyId: string,
       onSuccess: (response: RazorpayResponse) => void,
-      onFailure?: (error: string) => void
+      onFailure?: (error: string) => void,
+       onCancel?: () => void  // ✅ new
     ) => {
       setIsLoading(true);
       setError(null);
@@ -118,6 +119,7 @@ export const useRazorpay = () => {
               await cancelPayment(orderId);
               setIsLoading(false);
               onFailure?.('Payment cancelled by user');
+              onCancel?.(); // ✅ trigger cancel callback
             },
           },
         };

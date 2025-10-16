@@ -41,6 +41,17 @@ const Header=()=> {
                 <Table className="w-4 h-4" />
                 Payment Table
               </Link>
+              <Link
+                to="/me-history"
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  location.pathname === '/me-history' 
+                    ? 'bg-indigo-100 text-indigo-700' 
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                <Table className="w-4 h-4" />
+                Payment Details
+              </Link>
             </nav>
           </div>
         </div>

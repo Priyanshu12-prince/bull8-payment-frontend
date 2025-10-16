@@ -7,6 +7,7 @@ import UnauthorizedPage from './page/UnauthorizedPage';
 import PricingPage from './page/PricingPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import Loader from './components/Loader';
+import UserPaymentDetail from './components/UserPaymentDetails';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -72,6 +73,7 @@ function App() {
         <Routes>
           <Route path="/" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
           <Route path="/payment-table" element={<PaymentsTable />} />
+          <Route path="/me-history" element={<UserPaymentDetail />} />
         </Routes>
       </div>
     </Router>

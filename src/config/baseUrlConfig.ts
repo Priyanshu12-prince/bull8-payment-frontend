@@ -12,12 +12,12 @@ const config = {
     VERSION:"v1/"
   },
   production: {
-    BASE_URL: "https://paytm.bull8.ai",
+    BASE_URL: "https://pay.bull8.ai/api",
     ENV: "production",
     VERSION:"v1/"
   },
 };
 
- export const apiConfig=config.testing
+ export const apiConfig=config.production
 
 

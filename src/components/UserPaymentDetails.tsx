@@ -11,287 +11,251 @@ import {
   DollarSign,
   Package,
   Calendar,
-  Icon as LucideIcon, // Renaming Icon to LucideIcon to avoid conflict with DetailItem prop
+  Database,
+  FileText,
+  ShieldCheck,
+  ShieldAlert,
 } from 'lucide-react';
+import axios from 'axios';
+import { apiConfig } from '../config/baseUrlConfig';
 
-// --- TYPE DEFINITIONS ---
+const { BASE_URL, VERSION } = apiConfig;
+
+// ---------- Types ----------
 interface ITransactionData {
-    uuid: string;
-    userId: string;
-    userDomainUrl: string;
-    ctclId: string;
-    name: string;
-    plan: string;
-    email: string;
-    contact: string;
-    amount: string;
-    currency: string | null;
-    description: string;
-    order_id: string;
-    payment_id: string | null;
-    method: string | null;
-    status: string | null;
-    vpa: string | null;
-    fee: string | null;
-    tax: string | null;
-    payment_verified: 'YES' | 'NO';
-    payment_status: string;
-    acquirer_data: any; // Using any for unknown structure, should be defined if known
-    notes: any; // Using any for unknown structure
-    raw_payload: any; // Using any for unknown structure
-    createdAt: string;
-    updatedAt: string;
+  uuid: string;
+  userId: string;
+  userDomainUrl: string;
+  ctclId: string;
+  name: string;
+  plan: string;
+  email: string;
+  contact: string;
+  amount: string;
+  currency: string | null;
+  description: string;
+  order_id: string;
+  payment_id: string | null;
+  method: string | null;
+  status: string | null;
+  vpa: string | null;
+  fee: string | null;
+  tax: string | null;
+  payment_verified: 'YES' | 'NO';
+  payment_status: string;
+  acquirer_data: any;
+  notes: any;
+  raw_payload: any;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface IApiResponse {
-    success: boolean;
-    message: string;
-    data: ITransactionData;
-    error: any;
+  success: boolean;
+  message: string;
+  data: ITransactionData;
+  error: any;
 }
 
-
-// --- MOCK DATA (Provided by the user) ---
-const mockApiResponse: IApiResponse = {
-    "success": true,
-    "message": "Successfully completed the request",
-    "data": {
-        "uuid": "0adcb0f5-a845-47f6-a74a-c78f3bd2e2ad",
-        "userId": "8cbe5b1e-4d9a-4a1b-91c8-fd3e4f7db98k",
-        "userDomainUrl": "eopsintechprivatlimited.com",
-        "ctclId": "10000001",
-        "name": "Sourabh Bhardwaj",
-        "plan": "GROWTH",
-        "email": "sourabh@gmail.com",
-        "contact": "2020202020",
-        "amount": "200.00",
-        "currency": null,
-        "description": "growth payment",
-        "order_id": "order_RTkBV2Fkw0RNeN",
-        "payment_id": null,
-        "method": null,
-        "status": null,
-        "vpa": null,
-        "fee": null,
-        "tax": null,
-        "payment_verified": "NO",
-        "payment_status": "CANCELLED",
-        "acquirer_data": null,
-        "notes": null,
-        "raw_payload": {},
-        "createdAt": "2025-10-15T12:10:47.000Z",
-        "updatedAt": "2025-10-15T12:11:01.000Z"
-    },
-    "error": {}
-};
-
-// --- Helper Functions ---
-
-/**
- * Formats a raw string key into a human-readable title.
- * @param {string} key
- * @returns {string}
- */
-const formatKey = (key: string): string => {
-    return key
-        .replace(/([A-Z])/g, ' $1') // Add space before capital letters
-        .replace(/^(.)/, (match) => match.toUpperCase()) // Capitalize first letter
-        .replace(/url/i, 'URL') // Fix capitalization for 'url'
-        .trim();
-};
-
-/**
- * Formats ISO date string to a readable format.
- * @param {string | null | undefined} isoString
- * @returns {string}
- */
+// ---------- Helpers ----------
 const formatDate = (isoString: string | null | undefined): string => {
-    if (!isoString) return 'N/A';
-    try {
-        return new Date(isoString).toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            timeZoneName: 'short'
-        });
-    } catch (e) {
-        return isoString;
-    }
+  if (!isoString) return 'N/A';
+  return new Date(isoString).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short',
+  });
 };
 
-interface StatusBadgeProps {
-    status: string | null | undefined;
-}
-
-/**
- * Renders a colored badge based on the payment status.
- */
-const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-    let colorClass: string;
-    let Icon: LucideIcon = Clock;
-
-    switch (status?.toUpperCase()) {
-        case 'CAPTURED':
-        case 'PAID':
-            colorClass = 'bg-green-100 text-green-800 border-green-300';
-            Icon = CheckCircle;
-            break;
-        case 'CANCELLED':
-        case 'FAILED':
-            colorClass = 'bg-red-100 text-red-800 border-red-300';
-            Icon = XCircle;
-            break;
-        case 'PENDING':
-        case 'CREATED':
-            colorClass = 'bg-yellow-100 text-yellow-800 border-yellow-300';
-            Icon = Clock;
-            break;
-        default:
-            colorClass = 'bg-gray-100 text-gray-800 border-gray-300';
-            Icon = Clock;
-            break;
-    }
-
-    return (
-        <span
-            className={`inline-flex items-center gap-1.5 px-3 py-1 text-sm font-semibold rounded-full border ${colorClass} transition-all duration-300`}
-        >
-            <Icon size={16} className="shrink-0" />
-            {status || 'Unknown'}
-        </span>
-    );
+const StatusBadge: React.FC<{ status: string | null }> = ({ status }) => {
+  let colorClass = '';
+  let Icon = Clock;
+  switch (status?.toUpperCase()) {
+    case 'SUCCESS':
+    case 'PAID':
+    case 'CAPTURED':
+      colorClass = 'bg-green-100 text-green-800 border-green-300';
+      Icon = CheckCircle;
+      break;
+    case 'FAILED':
+    case 'CANCELLED':
+      colorClass = 'bg-red-100 text-red-800 border-red-300';
+      Icon = XCircle;
+      break;
+    case 'PENDING':
+    case 'CREATED':
+      colorClass = 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      Icon = Clock;
+      break;
+    default:
+      colorClass = 'bg-gray-100 text-gray-700 border-gray-300';
+  }
+  return (
+    <span className={`inline-flex items-center gap-2 px-3 py-1 border rounded-full font-semibold text-sm ${colorClass}`}>
+      <Icon size={16} />
+      {status || 'Unknown'}
+    </span>
+  );
 };
 
-interface DetailItemProps {
-    icon: LucideIcon;
-    label: string;
-    value: string | number | null | undefined;
-    className?: string;
-}
-
-// --- Single Detail Item Component ---
-
-const DetailItem: React.FC<DetailItemProps> = ({ icon: Icon, label, value, className = '' }) => (
-    <div className={`p-3 bg-white/70 rounded-lg transition-shadow duration-200 hover:shadow-md ${className}`}>
-        <dt className="flex items-center text-sm font-medium text-gray-500 mb-1">
-            {Icon && <Icon size={16} className="mr-2 text-indigo-500" />}
-            {label}
-        </dt>
-        <dd className="text-base font-semibold text-gray-800 truncate">
-            {value !== null && value !== undefined ? value : 'N/A'}
-        </dd>
-    </div>
+const DetailItem = ({
+  icon: Icon,
+  label,
+  value,
+  highlight,
+}: {
+  icon: any;
+  label: string;
+  value: string | number | null | undefined;
+  highlight?: boolean;
+}) => (
+  <div
+    className={`p-3 rounded-lg border transition-all duration-200 ${
+      highlight
+        ? 'bg-indigo-50 border-indigo-300 shadow-md'
+        : 'bg-white/80 border-gray-200 hover:shadow-sm'
+    }`}
+  >
+    <dt className="flex items-center text-sm font-medium text-gray-600 mb-1">
+      <Icon size={16} className="mr-2 text-indigo-500" />
+      {label}
+    </dt>
+    <dd className="text-base font-semibold text-gray-900 truncate">
+      {value || 'N/A'}
+    </dd>
+  </div>
 );
 
-// --- Main Application Component ---
-
+// ---------- Main Component ----------
 const UserPaymentDetail: React.FC = () => {
-    // Typed state using the ITransactionData interface
-    const [transactionData, setTransactionData] = useState<ITransactionData | null>(mockApiResponse.data);
+  const [transactionData, setTransactionData] = useState<ITransactionData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-    // Explicitly typed array of keys
-    const excludedKeys: (keyof ITransactionData)[] = [
-        'raw_payload', 'notes', 'acquirer_data', 'currency', 'vpa', 'method',
-        'status', // Redundant, use payment_status
-        'uuid', 'userId', 'ctclId' // Moved to IDs section
-    ];
+  const getUserDetail = async () => {
+    try {
+      const res = await axios.get(
+        `${BASE_URL}${VERSION}/dash/getPaymentByUserId?userId=8cbe5b1e-4d9a-4a1b-91c8-fd3e4f7db98k`
+      );
+      setTransactionData(res.data.data);
+    } catch (err) {
+      console.error('Error fetching payment data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Removed unused dataPairs calculation
+  useEffect(() => {
+    getUserDetail();
+  }, []);
 
-    const Header: React.FC = () => (
-        <header className="mb-8 p-4 bg-indigo-600 rounded-t-xl shadow-lg">
-            <h1 className="text-3xl font-extrabold text-white flex items-center">
-                <CreditCard size={32} className="mr-3" />
-                Payment Transaction Report
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen text-gray-600 text-xl font-semibold">
+        Loading Payment Details...
+      </div>
+    );
+  }
+
+  if (!transactionData) {
+    return (
+      <div className="flex justify-center items-center h-screen text-gray-600 text-xl font-semibold">
+        No Payment Data Found
+      </div>
+    );
+  }
+
+  const isSuccess = transactionData.payment_status?.toUpperCase() === 'SUCCESS';
+
+  return (
+    <div className="min-h-screen bg-gray-100 py-8 px-4 flex justify-center">
+      <div className="w-full max-w-5xl bg-white shadow-2xl rounded-2xl overflow-hidden">
+        {/* Header */}
+        <header
+          className={`p-6 flex flex-col sm:flex-row sm:items-center justify-between ${
+            isSuccess ? 'bg-green-600' : 'bg-red-600'
+          } text-white`}
+        >
+          <div>
+            <h1 className="text-2xl font-bold flex items-center">
+              <CreditCard size={28} className="mr-3" />
+              Payment Transaction Report
             </h1>
-            <p className="text-indigo-200 mt-1">Status: {mockApiResponse.message}</p>
+            <p className="text-sm text-white/80 mt-1">
+              {isSuccess ? 'Payment Verified Successfully' : 'Payment Failed / Cancelled'}
+            </p>
+          </div>
+          <StatusBadge status={transactionData.payment_status} />
         </header>
-    );
 
-    const GeneralDetails: React.FC = () => (
-        <section className="p-6 bg-gray-50 rounded-xl shadow-inner mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <DetailItem
-                    icon={DollarSign}
-                    label="Amount"
-                    // Use optional chaining for safe access
-                    value={`$${transactionData?.amount || '0.00'} ${transactionData?.currency || 'USD'}`}
-                    className="md:col-span-2 bg-indigo-50 border-2 border-indigo-200 shadow-lg"
-                />
-                <div className="flex flex-col justify-center items-end md:items-start p-3 bg-white rounded-lg">
-                    <dt className="text-sm font-medium text-gray-500 mb-1">Payment Status</dt>
-                    <dd className="text-lg font-bold">
-                        <StatusBadge status={transactionData?.payment_status} />
-                    </dd>
-                </div>
-            </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                 <DetailItem icon={Calendar} label="Created At" value={formatDate(transactionData?.createdAt)} />
-                 <DetailItem icon={Calendar} label="Updated At" value={formatDate(transactionData?.updatedAt)} />
-                 <DetailItem icon={Package} label="Plan" value={transactionData?.plan} />
-                 <DetailItem icon={ExternalLink} label="Description" value={transactionData?.description} />
-            </div>
-        </section>
-    );
+        {/* Body */}
+        <main className="p-6 space-y-8">
+          {/* Amount + Status */}
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <DetailItem
+              icon={DollarSign}
+              label="Amount"
+              value={`${transactionData.amount} ${transactionData.currency || ''}`}
+              highlight
+            />
+            <DetailItem icon={Package} label="Plan" value={transactionData.plan} />
+            <DetailItem icon={Calendar} label="Created At" value={formatDate(transactionData.createdAt)} />
+          </section>
 
-    const UserDetails: React.FC = () => (
-        <section className="mb-6 p-6 bg-white rounded-xl shadow-lg border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-700 mb-4 border-b pb-2 flex items-center">
-                <User size={20} className="mr-2 text-indigo-500" />
-                User Information
+          {/* User Info */}
+          <section className="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-inner">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+              <User size={20} className="mr-2 text-indigo-500" />
+              User Information
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <DetailItem icon={User} label="Name" value={transactionData?.name} />
-                <DetailItem icon={Mail} label="Email" value={transactionData?.email} />
-                <DetailItem icon={Phone} label="Contact" value={transactionData?.contact} />
-                <DetailItem icon={ExternalLink} label="Domain URL" value={transactionData?.userDomainUrl} className="lg:col-span-3" />
+              <DetailItem icon={User} label="Name" value={transactionData.name} />
+              <DetailItem icon={Mail} label="Email" value={transactionData.email} />
+              <DetailItem icon={Phone} label="Contact" value={transactionData.contact} />
+              <DetailItem icon={ExternalLink} label="Domain URL" value={transactionData.userDomainUrl} />
             </div>
-        </section>
-    );
+          </section>
 
-    const IDSection: React.FC = () => (
-        <section className="mb-6 p-6 bg-white rounded-xl shadow-lg border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-700 mb-4 border-b pb-2 flex items-center">
-                <Clock size={20} className="mr-2 text-indigo-500" />
-                Identifiers & Verification
+          {/* Identifiers */}
+          <section className="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-inner">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+              <ShieldCheck size={20} className="mr-2 text-indigo-500" />
+              Transaction Identifiers
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <DetailItem icon={CreditCard} label="Order ID" value={transactionData?.order_id} />
-                <DetailItem icon={CreditCard} label="Payment ID" value={transactionData?.payment_id || 'N/A'} />
-                <DetailItem icon={User} label="User ID" value={transactionData?.userId} />
-                <DetailItem
-                    icon={CheckCircle}
-                    label="Payment Verified"
-                    value={transactionData?.payment_verified === 'YES' ? 'Verified' : 'Unverified'}
-                    className={transactionData?.payment_verified === 'YES' ? 'bg-green-50' : 'bg-red-50'}
-                />
+              <DetailItem icon={CreditCard} label="Order ID" value={transactionData.order_id} />
+              <DetailItem icon={CreditCard} label="Payment ID" value={transactionData.payment_id} />
+              <DetailItem icon={User} label="CTCL ID" value={transactionData.ctclId} />
+              <DetailItem
+                icon={transactionData.payment_verified === 'YES' ? ShieldCheck : ShieldAlert}
+                label="Payment Verified"
+                value={transactionData.payment_verified === 'YES' ? 'Verified' : 'Unverified'}
+                highlight={transactionData.payment_verified === 'YES'}
+              />
             </div>
-            <div className='mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                <DetailItem icon={Package} label="System UUID" value={transactionData?.uuid} />
-                <DetailItem icon={Package} label="CTCL ID" value={transactionData?.ctclId} />
-            </div>
-        </section>
-    );
+          </section>
 
-    if (!transactionData) {
-        return <div className="text-center p-8 text-xl font-medium text-gray-500">Loading data...</div>;
-    }
-
-    return (
-        <div className="font-sans min-h-screen bg-gray-100 p-4 sm:p-8 flex justify-center">
-            <div className="w-full max-w-5xl bg-white rounded-xl shadow-2xl overflow-hidden">
-                <Header />
-                <main className="p-4 sm:p-8">
-                    <GeneralDetails />
-                    <UserDetails />
-                    <IDSection />
-                </main>
+          {/* Technical Info */}
+          <section className="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-inner">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+              <Database size={20} className="mr-2 text-indigo-500" />
+              Technical Details
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <DetailItem icon={FileText} label="Description" value={transactionData.description} />
+              <DetailItem icon={Package} label="Method" value={transactionData.method || 'N/A'} />
+              <DetailItem icon={DollarSign} label="Fee" value={transactionData.fee || '0.00'} />
+              <DetailItem icon={DollarSign} label="Tax" value={transactionData.tax || '0.00'} />
+              <DetailItem icon={ExternalLink} label="VPA" value={transactionData.vpa || 'N/A'} />
             </div>
-        </div>
-    );
+          </section>
+        </main>
+      </div>
+    </div>
+  );
 };
 
 export default UserPaymentDetail;

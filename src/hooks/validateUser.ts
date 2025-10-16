@@ -8,7 +8,7 @@ export async function validateUser(data: any, sig: any) {
   const payloadData = shouldEncode ? encodeURIComponent(data) : data;
 
   const response = await axios.post(
-    `${BASE_URL}/url/decodeUrl`,
+    `${BASE_URL}${apiConfig.VERSION}/url/decodeUrl`,
     { data: payloadData, sig },
     {
       headers: {

@@ -15,7 +15,7 @@ export function useAllPaymentData() {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get(`${BASE_URL}${VERSION}/dash/getAllPayment`);
+        const response = await axios.get(`${BASE_URL}${VERSION}dash/getAllPayment`);
         if (isMounted) {
           setPayments(response.data || []);
         }

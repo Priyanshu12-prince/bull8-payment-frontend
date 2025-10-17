@@ -1,25 +1,14 @@
 import { useState, useCallback } from 'react';
 import { RazorpayOptions, RazorpayResponse } from '../types/razorpay';
 import { apiConfig } from '../config/baseUrlConfig';
+import { useUser } from '../contexts/UserContext';
 
 const { BASE_URL, VERSION } = apiConfig;
 
-interface UserData {
-  name?: string;
-  email?: string;
-  contact?: string;
-}
-
-const getUserData = (): UserData | null => {
-  try {
-    const raw = localStorage.getItem('userData');
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-};
-
 export const useRazorpay = () => {
+  const { userData, isAuthenticated, setUserData } = useUser();
+  console.log(userData, 'from the payment data')
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +24,8 @@ export const useRazorpay = () => {
     });
   }, []);
 
-  const createOrder = useCallback(async (plan: string, keyId: string, userData: UserData | null): Promise<string> => {
+  const createOrder = useCallback(async (plan: string, keyId: string, userData: any): Promise<string> => {
+    if (!userData) throw new Error('User not authenticated');
     const response = await fetch(`${BASE_URL}${VERSION}payment/create-order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -48,6 +38,7 @@ export const useRazorpay = () => {
     }
 
     const data = await response.json();
+    console.log('Create order response:', data);
     return data?.data?.id;
   }, []);
 
@@ -83,18 +74,20 @@ export const useRazorpay = () => {
       keyId: string,
       onSuccess: (response: RazorpayResponse) => void,
       onFailure?: (error: string) => void,
-       onCancel?: () => void  // ✅ new
+      onCancel?: () => void
     ) => {
       setIsLoading(true);
       setError(null);
 
-      const userData = getUserData();
-
       try {
+        console.log('Initiating payment with plan:', plan);
+        console.log('User data:', userData);
+        
         const isScriptLoaded = await loadRazorpayScript();
         if (!isScriptLoaded) throw new Error('Failed to load Razorpay script');
 
         const orderId = await createOrder(plan, keyId, userData);
+        console.log('Order created with ID:', orderId);
 
         const options: RazorpayOptions = {
           key: keyId,
@@ -106,6 +99,8 @@ export const useRazorpay = () => {
               else onFailure?.('Payment verification failed');
             } catch {
               onFailure?.('Error verifying payment');
+            } finally {
+              setIsLoading(false);
             }
           },
           prefill: {
@@ -119,21 +114,23 @@ export const useRazorpay = () => {
               await cancelPayment(orderId);
               setIsLoading(false);
               onFailure?.('Payment cancelled by user');
-              onCancel?.(); // ✅ trigger cancel callback
+              onCancel?.();
             },
           },
         };
 
+        console.log('Opening Razorpay dialog with options:', options);
         const razorpay = new window.Razorpay(options);
         razorpay.open();
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Payment failed';
+        console.error('Payment initiation failed:', errorMessage);
         setError(errorMessage);
         onFailure?.(errorMessage);
         setIsLoading(false);
       }
     },
-    [createOrder, loadRazorpayScript]
+    [createOrder, loadRazorpayScript, userData]
   );
 
   return { initiatePayment, isLoading, error };

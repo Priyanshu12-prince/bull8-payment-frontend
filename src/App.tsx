@@ -9,6 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Loader from './components/Loader';
 import UserPaymentDetail from './components/UserPaymentDetails';
 import { useUser } from './contexts/UserContext';
+import AutoPaymentInitiator from './components/AutoPaymentInitiator';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -73,7 +74,7 @@ function App() {
 
     {!loading && (
       <Routes>
-        <Route path="/" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
+        <Route path="/" element={<ProtectedRoute><AutoPaymentInitiator /></ProtectedRoute>} />
         <Route path="/payment-table" element={<PaymentsTable />} />
         <Route path="/me-history" element={<UserPaymentDetail />} />
       </Routes>

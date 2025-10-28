@@ -32,8 +32,22 @@ const AutoPaymentInitiator = () => {
           userData.plan,
           keyId,
           (response: RazorpayResponse) => {
-            setPaymentData(response);
-            setPaymentState('success');
+            console.log('Payment successful, userData:', userData);
+            console.log('domainName:', userData?.domainName);
+            console.log('userId:', userData?.userId);
+            
+            // Redirect only on successful transaction
+            if (userData?.domainName && userData?.userId) {
+              const domain = userData.domainName.replace(/\/$/, '');
+              const redirectUrl = `${domain}/payment?userId=${userData.userId}&status=success`;
+              console.log('Redirecting to:', redirectUrl);
+              window.location.href = redirectUrl;
+            } else {
+              console.log('Cannot redirect: missing userData fields');
+              // Fallback to current behavior if user data is missing
+              setPaymentData(response);
+              setPaymentState('success');
+            }
           },
           (errorMessage: string) => {
             console.error('Payment failed:', errorMessage);

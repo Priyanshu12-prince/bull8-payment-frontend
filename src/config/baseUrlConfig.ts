@@ -18,6 +18,6 @@ const config = {
   },
 };
 
- export const apiConfig=config.development;  
+ export const apiConfig=config.production;  
 
 
